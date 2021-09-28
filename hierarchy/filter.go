@@ -54,7 +54,8 @@ func DefaultPointInPolygonToolUpdateCallback() hierarchy.PointInPolygonHierarchy
 }
 
 // ChoosePointInPolygonCandidate returns a SFO Museum specific whosonfirst/go-whosonfirst-spatial-hierarchy `FilterSPRResultsFunc` function
-// for use with the whosonfirst/go-whosonfirst-spatial-hierarchy `PointInPolygonHierarchyResolver.PointInPolygonAndUpdate` method.
+// for use with the whosonfirst/go-whosonfirst-spatial-hierarchy `PointInPolygonHierarchyResolver.PointInPolygonAndUpdate` method. Under the
+// hood it invokes `ChoosePointInPolygonCandidateStrict` but return `nil` rather than an error if no matches are found.
 func ChoosePointInPolygonCandidate(ctx context.Context, spatial_r reader.Reader, body []byte, possible []spr.StandardPlacesResult) (spr.StandardPlacesResult, error) {
 
 	rsp, err := ChoosePointInPolygonCandidateStrict(ctx, spatial_r, body, possible)
@@ -70,6 +71,9 @@ func ChoosePointInPolygonCandidate(ctx context.Context, spatial_r reader.Reader,
 	return rsp, nil
 }
 
+// ChoosePointInPolygonCandidateStrict returns a SFO Museum specific whosonfirst/go-whosonfirst-spatial-hierarchy `FilterSPRResultsFunc` function
+// for use with the whosonfirst/go-whosonfirst-spatial-hierarchy `PointInPolygonHierarchyResolver.PointInPolygonAndUpdate` method. It ensures that
+// only a single match will be returned. If that criteria can not be met it will return an error.
 func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.Reader, body []byte, possible []spr.StandardPlacesResult) (spr.StandardPlacesResult, error) {
 
 	var parent_s spr.StandardPlacesResult
