@@ -6,7 +6,7 @@ import (
 	sfom_reader "github.com/sfomuseum/go-sfomuseum-reader"
 	"github.com/tidwall/gjson"
 	"github.com/whosonfirst/go-reader"
-	"github.com/whosonfirst/go-whosonfirst-geojson-v2/properties/whosonfirst"
+	"github.com/whosonfirst/go-whosonfirst-feature/properties"
 	"github.com/whosonfirst/go-whosonfirst-spatial-hierarchy"
 	"github.com/whosonfirst/go-whosonfirst-spr/v2"
 	"log"
@@ -32,14 +32,14 @@ func DefaultPointInPolygonToolUpdateCallback() hierarchy.PointInPolygonHierarchy
 			return nil, err
 		}
 
-		parent_f, err := sfom_reader.LoadFeatureFromID(ctx, r, parent_id)
+		parent_f, err := sfom_reader.LoadBytesFromID(ctx, r, parent_id)
 
 		if err != nil {
 			return nil, err
 		}
 
-		parent_hierarchy := whosonfirst.Hierarchies(parent_f)
-		parent_country := whosonfirst.Country(parent_f)
+		parent_hierarchy := properties.Hierarchies(parent_f)
+		parent_country := properties.Country(parent_f)
 
 		to_update = map[string]interface{}{
 			"properties.wof:parent_id": parent_id,
