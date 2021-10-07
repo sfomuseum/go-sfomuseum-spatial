@@ -9,7 +9,7 @@ func Country(body []byte) string {
 	rsp := gjson.GetBytes(body, "properties.wof:country")
 
 	if !rsp.Exists() {
-		return "XX"
+		return "XY"
 	}
 
 	return rsp.String()

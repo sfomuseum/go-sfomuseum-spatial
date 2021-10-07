@@ -49,7 +49,7 @@ github.com/sfomuseum/go-flags/lookup
 github.com/sfomuseum/go-flags/multi
 # github.com/sfomuseum/go-sfomuseum-geojson v0.1.2
 github.com/sfomuseum/go-sfomuseum-geojson/feature
-# github.com/sfomuseum/go-sfomuseum-mapshaper v0.0.0-20210212000251-b549bd7322c4
+# github.com/sfomuseum/go-sfomuseum-mapshaper v0.0.1
 github.com/sfomuseum/go-sfomuseum-mapshaper
 # github.com/sfomuseum/go-sfomuseum-reader v0.0.1
 ## explicit
@@ -74,10 +74,10 @@ github.com/whosonfirst/go-reader
 github.com/whosonfirst/go-sanitize
 # github.com/whosonfirst/go-whosonfirst-crawl v0.2.1
 github.com/whosonfirst/go-whosonfirst-crawl
-# github.com/whosonfirst/go-whosonfirst-export/v2 v2.3.0
+# github.com/whosonfirst/go-whosonfirst-export/v2 v2.3.5
 github.com/whosonfirst/go-whosonfirst-export/v2
 github.com/whosonfirst/go-whosonfirst-export/v2/properties
-# github.com/whosonfirst/go-whosonfirst-feature v0.0.10
+# github.com/whosonfirst/go-whosonfirst-feature v0.0.13
 ## explicit
 github.com/whosonfirst/go-whosonfirst-feature/geometry
 github.com/whosonfirst/go-whosonfirst-feature/properties
@@ -87,7 +87,7 @@ github.com/whosonfirst/go-whosonfirst-flags/date
 github.com/whosonfirst/go-whosonfirst-flags/existential
 github.com/whosonfirst/go-whosonfirst-flags/geometry
 github.com/whosonfirst/go-whosonfirst-flags/placetypes
-# github.com/whosonfirst/go-whosonfirst-format v0.3.0
+# github.com/whosonfirst/go-whosonfirst-format v0.3.6
 github.com/whosonfirst/go-whosonfirst-format
 # github.com/whosonfirst/go-whosonfirst-geojson-v2 v0.16.3
 github.com/whosonfirst/go-whosonfirst-geojson-v2
@@ -109,25 +109,25 @@ github.com/whosonfirst/go-whosonfirst-log
 # github.com/whosonfirst/go-whosonfirst-placetypes v0.3.0
 github.com/whosonfirst/go-whosonfirst-placetypes
 github.com/whosonfirst/go-whosonfirst-placetypes/placetypes
-# github.com/whosonfirst/go-whosonfirst-reader v0.0.3
+# github.com/whosonfirst/go-whosonfirst-reader v0.3.0
 github.com/whosonfirst/go-whosonfirst-reader
 # github.com/whosonfirst/go-whosonfirst-sources v0.1.0
 github.com/whosonfirst/go-whosonfirst-sources
 github.com/whosonfirst/go-whosonfirst-sources/sources
-# github.com/whosonfirst/go-whosonfirst-spatial v0.1.2
+# github.com/whosonfirst/go-whosonfirst-spatial v0.3.1
 ## explicit
 github.com/whosonfirst/go-whosonfirst-spatial
 github.com/whosonfirst/go-whosonfirst-spatial/database
 github.com/whosonfirst/go-whosonfirst-spatial/filter
 github.com/whosonfirst/go-whosonfirst-spatial/flags
 github.com/whosonfirst/go-whosonfirst-spatial/geo
-# github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.0.2
+# github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.0.3
 ## explicit
 github.com/whosonfirst/go-whosonfirst-spatial-hierarchy
 # github.com/whosonfirst/go-whosonfirst-spr/v2 v2.0.0
 ## explicit
 github.com/whosonfirst/go-whosonfirst-spr/v2
-# github.com/whosonfirst/go-whosonfirst-uri v1.0.1
+# github.com/whosonfirst/go-whosonfirst-uri v1.1.0
 github.com/whosonfirst/go-whosonfirst-uri
 # github.com/whosonfirst/go-writer v0.6.0
 github.com/whosonfirst/go-writer

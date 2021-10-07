@@ -6,7 +6,6 @@ import (
 	"github.com/paulmach/orb"
 	"github.com/paulmach/orb/geojson"
 	"github.com/sfomuseum/go-sfomuseum-mapshaper"
-	"github.com/skelterjohn/geom"
 	"github.com/tidwall/gjson"
 	"github.com/whosonfirst/go-reader"
 	"github.com/whosonfirst/go-whosonfirst-export/v2"
@@ -14,6 +13,7 @@ import (
 	"github.com/whosonfirst/go-whosonfirst-placetypes"
 	wof_reader "github.com/whosonfirst/go-whosonfirst-reader"
 	"github.com/whosonfirst/go-whosonfirst-spatial/database"
+	"github.com/whosonfirst/go-whosonfirst-spatial/geo"	
 	"github.com/whosonfirst/go-whosonfirst-spatial/filter"
 	"github.com/whosonfirst/go-whosonfirst-spr/v2"
 	"strconv"
@@ -151,9 +151,10 @@ func (t *PointInPolygonHierarchyResolver) PointInPolygon(ctx context.Context, in
 
 	for _, a := range ancestors {
 
-		coord := &geom.Coord{
-			X: lon,
-			Y: lat,
+		coord, err := geo.NewCoordinate(lon, lat)
+
+		if err != nil {
+			return nil, fmt.Errorf("Failed to create new coordinate, %w", err) 
 		}
 
 		inputs.Placetypes = []string{a.Name}
