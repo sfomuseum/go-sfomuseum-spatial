@@ -2,9 +2,11 @@
 
 Opionated Who's On First (WOF) hierarchy for `go-whosonfirst-spatial` packages.
 
-## IMPORTANT
+## Documentation
 
-This is work in progress. Documentation to follow.
+[![Go Reference](https://pkg.go.dev/badge/github.com/whosonfirst/go-whosonfirst-spatial-hierarchy.svg)](https://pkg.go.dev/github.com/whosonfirst/go-whosonfirst-spatial-hierarchy)
+
+Documentation is incomplete.
 
 ## Example
 

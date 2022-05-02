@@ -26,8 +26,12 @@ type PointInPolygonHierarchyResolver struct {
 	Mapshaper *mapshaper.Client
 }
 
+// PointInPolygonHierarchyResolverUpdateCallback is a function definition for a custom callback to convert 'spr' in to a dictionary of properties
+// containining hierarchy information. Records in 'spr' are expected to be able to be read from 'r'.
 type PointInPolygonHierarchyResolverUpdateCallback func(context.Context, reader.Reader, spr.StandardPlacesResult) (map[string]interface{}, error)
 
+// DefaultPointInPolygonHierarchyResolverUpdateCallback returns a `PointInPolygonHierarchyResolverUpdateCallback` function that will return a dictionary
+// containing the following properties: wof:parent_id, wof:country, wof:hierarchy
 func DefaultPointInPolygonHierarchyResolverUpdateCallback() PointInPolygonHierarchyResolverUpdateCallback {
 
 	fn := func(ctx context.Context, r reader.Reader, parent_spr spr.StandardPlacesResult) (map[string]interface{}, error) {
@@ -70,6 +74,9 @@ func DefaultPointInPolygonHierarchyResolverUpdateCallback() PointInPolygonHierar
 	return fn
 }
 
+// NewPointInPolygonHierarchyResolver returns a `PointInPolygonHierarchyResolver` instance for 'spatial_db' and 'ms_client'.
+// The former is used to perform point in polygon operations and the latter is used to determine a "reverse geocoding" centroid
+// to use for point-in-polygon operations.
 func NewPointInPolygonHierarchyResolver(ctx context.Context, spatial_db database.SpatialDatabase, ms_client *mapshaper.Client) (*PointInPolygonHierarchyResolver, error) {
 
 	t := &PointInPolygonHierarchyResolver{
@@ -80,6 +87,7 @@ func NewPointInPolygonHierarchyResolver(ctx context.Context, spatial_db database
 	return t, nil
 }
 
+// PointInPolygonAndUpdate will ...
 func (t *PointInPolygonHierarchyResolver) PointInPolygonAndUpdate(ctx context.Context, inputs *filter.SPRInputs, results_cb FilterSPRResultsFunc, update_cb PointInPolygonHierarchyResolverUpdateCallback, body []byte) ([]byte, error) {
 
 	possible, err := t.PointInPolygon(ctx, inputs, body)
@@ -112,6 +120,7 @@ func (t *PointInPolygonHierarchyResolver) PointInPolygonAndUpdate(ctx context.Co
 	return body, nil
 }
 
+// PointInPolygon will perform a point-in-polygon (reverse geocoding) operation for 'body' using zero or more 'inputs' as query filters.
 func (t *PointInPolygonHierarchyResolver) PointInPolygon(ctx context.Context, inputs *filter.SPRInputs, body []byte) ([]spr.StandardPlacesResult, error) {
 
 	pt_rsp := gjson.GetBytes(body, "properties.wof:placetype")
