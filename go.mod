@@ -8,6 +8,6 @@ require (
 	github.com/whosonfirst/go-reader v0.10.0
 	github.com/whosonfirst/go-whosonfirst-feature v0.0.21
 	github.com/whosonfirst/go-whosonfirst-spatial v0.3.3
-	github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.0.4
+	github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.1.0
 	github.com/whosonfirst/go-whosonfirst-spr/v2 v2.0.0
 )
