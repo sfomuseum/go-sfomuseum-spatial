@@ -9,7 +9,7 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/whosonfirst/go-reader"
 	"github.com/whosonfirst/go-whosonfirst-export/v2"
-	"github.com/whosonfirst/go-whosonfirst-geojson-v2/properties/whosonfirst"
+	"github.com/whosonfirst/go-whosonfirst-feature/properties"
 	"github.com/whosonfirst/go-whosonfirst-placetypes"
 	wof_reader "github.com/whosonfirst/go-whosonfirst-reader"
 	"github.com/whosonfirst/go-whosonfirst-spatial/database"
@@ -52,14 +52,14 @@ func DefaultPointInPolygonHierarchyResolverUpdateCallback() PointInPolygonHierar
 				return nil, err
 			}
 
-			parent_f, err := wof_reader.LoadFeatureFromID(ctx, r, parent_id)
+			parent_f, err := wof_reader.LoadBytes(ctx, r, parent_id)
 
 			if err != nil {
 				return nil, err
 			}
 
-			parent_hierarchy := whosonfirst.Hierarchies(parent_f)
-			parent_country := whosonfirst.Country(parent_f)
+			parent_hierarchy := properties.Hierarchies(parent_f)
+			parent_country := properties.Country(parent_f)
 
 			to_update = map[string]interface{}{
 				"properties.wof:parent_id": parent_id,
@@ -302,7 +302,7 @@ func (t *PointInPolygonHierarchyResolver) PointInPolygonCentroid(ctx context.Con
 		}
 
 	default:
-		return nil, fmt.Errorf("Unsupported type '%s'", t)
+		return nil, fmt.Errorf("Unsupported type '%v'", t)
 	}
 
 	pt := candidate.Geometry.(orb.Point)
