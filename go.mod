@@ -6,7 +6,7 @@ require (
 	github.com/sfomuseum/go-sfomuseum-reader v0.0.2
 	github.com/tidwall/gjson v1.14.4
 	github.com/whosonfirst/go-reader v1.0.2
-	github.com/whosonfirst/go-whosonfirst-feature v0.0.25
+	github.com/whosonfirst/go-whosonfirst-feature v0.0.26
 	github.com/whosonfirst/go-whosonfirst-spatial v0.5.4
 	github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.3.3
 	github.com/whosonfirst/go-whosonfirst-spr/v2 v2.3.3
@@ -31,7 +31,7 @@ require (
 	github.com/mmcloughlin/geohash v0.10.0 // indirect
 	github.com/natefinch/atomic v1.0.1 // indirect
 	github.com/paulmach/go.geojson v1.4.0 // indirect
-	github.com/paulmach/orb v0.7.1 // indirect
+	github.com/paulmach/orb v0.8.0 // indirect
 	github.com/sfomuseum/go-edtf v1.1.1 // indirect
 	github.com/sfomuseum/go-flags v0.10.0 // indirect
 	github.com/sfomuseum/go-sfomuseum-geojson v0.1.3 // indirect

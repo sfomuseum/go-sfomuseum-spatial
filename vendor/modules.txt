@@ -52,7 +52,7 @@ github.com/natefinch/atomic
 # github.com/paulmach/go.geojson v1.4.0
 ## explicit
 github.com/paulmach/go.geojson
-# github.com/paulmach/orb v0.7.1
+# github.com/paulmach/orb v0.8.0
 ## explicit; go 1.15
 github.com/paulmach/orb
 github.com/paulmach/orb/geojson
@@ -114,7 +114,7 @@ github.com/whosonfirst/go-whosonfirst-crawl
 ## explicit; go 1.18
 github.com/whosonfirst/go-whosonfirst-export/v2
 github.com/whosonfirst/go-whosonfirst-export/v2/properties
-# github.com/whosonfirst/go-whosonfirst-feature v0.0.25
+# github.com/whosonfirst/go-whosonfirst-feature v0.0.26
 ## explicit; go 1.18
 github.com/whosonfirst/go-whosonfirst-feature/alt
 github.com/whosonfirst/go-whosonfirst-feature/geometry
