@@ -3,10 +3,12 @@ module github.com/sfomuseum/go-sfomuseum-spatial
 go 1.18
 
 require (
+	github.com/sfomuseum/go-sfomuseum-placetypes v0.0.2
 	github.com/sfomuseum/go-sfomuseum-reader v0.0.2
 	github.com/tidwall/gjson v1.14.4
 	github.com/whosonfirst/go-reader v1.0.2
 	github.com/whosonfirst/go-whosonfirst-feature v0.0.26
+	github.com/whosonfirst/go-whosonfirst-placetypes v0.7.0
 	github.com/whosonfirst/go-whosonfirst-spatial v0.5.6
 	github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.5.1
 	github.com/whosonfirst/go-whosonfirst-spr/v2 v2.3.6
@@ -52,7 +54,6 @@ require (
 	github.com/whosonfirst/go-whosonfirst-hash v0.1.0 // indirect
 	github.com/whosonfirst/go-whosonfirst-id v1.2.0 // indirect
 	github.com/whosonfirst/go-whosonfirst-iterate/v2 v2.3.1 // indirect
-	github.com/whosonfirst/go-whosonfirst-placetypes v0.7.0 // indirect
 	github.com/whosonfirst/go-whosonfirst-reader v1.0.1 // indirect
 	github.com/whosonfirst/go-whosonfirst-sources v0.1.0 // indirect
 	github.com/whosonfirst/go-whosonfirst-uri v1.3.0 // indirect
