@@ -2,8 +2,9 @@ package spatial
 
 import (
 	"context"
-	"github.com/whosonfirst/go-whosonfirst-spatial/database"
 	"fmt"
+
+	"github.com/whosonfirst/go-whosonfirst-spatial/database"
 )
 
 // NewSpatialDatabaseWithIterator returns a new `whosonfirst/go-whosonfirst-spatial` SpatialDatabase that has been populated

@@ -3,14 +3,15 @@ package hierarchy
 import (
 	"context"
 	"fmt"
+	"log"
+	"strconv"
+
 	sfom_reader "github.com/sfomuseum/go-sfomuseum-reader"
 	"github.com/tidwall/gjson"
 	"github.com/whosonfirst/go-reader"
 	"github.com/whosonfirst/go-whosonfirst-feature/properties"
 	"github.com/whosonfirst/go-whosonfirst-spatial-hierarchy"
 	"github.com/whosonfirst/go-whosonfirst-spr/v2"
-	"log"
-	"strconv"
 )
 
 // DefaultPointInPolygonToolUpdateCallback returns a SFO Museum specific whosonfirst/go-whosonfirst-spatial-hierarchy `PointInPolygonHierarchyResolverUpdateCallback`
