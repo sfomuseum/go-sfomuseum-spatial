@@ -87,6 +87,9 @@ github.com/sfomuseum/go-sfomuseum-geojson/feature
 # github.com/sfomuseum/go-sfomuseum-mapshaper v0.0.1
 ## explicit; go 1.12
 github.com/sfomuseum/go-sfomuseum-mapshaper
+# github.com/sfomuseum/go-sfomuseum-placetypes v0.0.2
+## explicit; go 1.18
+github.com/sfomuseum/go-sfomuseum-placetypes
 # github.com/sfomuseum/go-sfomuseum-reader v0.0.2
 ## explicit; go 1.12
 github.com/sfomuseum/go-sfomuseum-reader
@@ -172,7 +175,7 @@ github.com/whosonfirst/go-whosonfirst-spatial/database
 github.com/whosonfirst/go-whosonfirst-spatial/filter
 github.com/whosonfirst/go-whosonfirst-spatial/flags
 github.com/whosonfirst/go-whosonfirst-spatial/geo
-# github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.5.1
+# github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.6.0
 ## explicit; go 1.18
 github.com/whosonfirst/go-whosonfirst-spatial-hierarchy
 github.com/whosonfirst/go-whosonfirst-spatial-hierarchy/filter

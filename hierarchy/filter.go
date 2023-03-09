@@ -5,11 +5,15 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"sync"
 
+	aa_log "github.com/aaronland/go-log/v2"
+	sfom_placetypes "github.com/sfomuseum/go-sfomuseum-placetypes"
 	sfom_reader "github.com/sfomuseum/go-sfomuseum-reader"
 	"github.com/tidwall/gjson"
 	"github.com/whosonfirst/go-reader"
 	"github.com/whosonfirst/go-whosonfirst-feature/properties"
+	wof_placetypes "github.com/whosonfirst/go-whosonfirst-placetypes"
 	"github.com/whosonfirst/go-whosonfirst-spatial-hierarchy"
 	"github.com/whosonfirst/go-whosonfirst-spr/v2"
 )
@@ -74,11 +78,16 @@ func ChoosePointInPolygonCandidate(ctx context.Context, spatial_r reader.Reader,
 
 // ChoosePointInPolygonCandidateStrict returns a SFO Museum specific whosonfirst/go-whosonfirst-spatial-hierarchy `FilterSPRResultsFunc` function
 // for use with the whosonfirst/go-whosonfirst-spatial-hierarchy `PointInPolygonHierarchyResolver.PointInPolygonAndUpdate` method. It ensures that
-// only a single match will be returned. If that criteria can not be met it will return an error.
+// only a single match will be returned. It also ensures that all possible candidates have `sfomuseum:placetype` and `sfo:level` properties which
+// match those found in 'body'. If those criteria can not be met it will return an error.
 func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.Reader, body []byte, possible []spr.StandardPlacesResult) (spr.StandardPlacesResult, error) {
+
+	logger := log.Default()
 
 	var parent_s spr.StandardPlacesResult
 	count := len(possible)
+
+	aa_log.Debug(logger, "Choose from %d results", count)
 
 	switch count {
 	case 0:
@@ -91,6 +100,128 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 
 	default:
 
+		// START OF sfomuseum:placetype stuff
+
+		pt_rsp := gjson.GetBytes(body, "properties.sfomuseum:placetype")
+
+		if !pt_rsp.Exists() {
+			return nil, fmt.Errorf("Record is missing sfomuseum:placetype property")
+		}
+
+		pt_spec, err := sfom_placetypes.SFOMuseumPlacetypeSpecification()
+
+		if err != nil {
+			return nil, fmt.Errorf("Failed to load SFO Museum placetype specification, %w", err)
+		}
+
+		pt, err := pt_spec.GetPlacetypeByName(pt_rsp.String())
+
+		if err != nil {
+			return nil, fmt.Errorf("Failed to load placetype '%s', %w", pt_rsp.String(), err)
+		}
+
+		roles := wof_placetypes.AllRoles()
+
+		ancestors := pt_spec.AncestorsForRoles(pt, roles)
+
+		// First cut of possible whose sfomuseum:placetype property matches pt
+		candidates := make([]spr.StandardPlacesResult, 0)
+
+		// Local cache of features we need to fetch in order to inspect non-SPR
+		// properties
+
+		features := new(sync.Map)
+
+		// Local function for fetching/cache features
+
+		load_feature := func(p_id int64) []byte {
+
+			var p_body []byte
+
+			v, exists := features.Load(p_id)
+
+			if exists {
+				p_body = v.([]byte)
+			} else {
+
+				v, err := sfom_reader.LoadBytesFromID(ctx, spatial_r, p_id)
+
+				if err != nil {
+					aa_log.Error(logger, "Failed to load %d, %v", p_id, err)
+				} else {
+					p_body = v
+				}
+
+				features.Store(p_id, v)
+			}
+
+			return p_body
+		}
+
+		spr_ch := make(chan spr.StandardPlacesResult)
+		err_ch := make(chan error)
+		done_ch := make(chan bool)
+
+		for _, a := range ancestors {
+
+			for _, r := range possible {
+
+				go func(r spr.StandardPlacesResult) {
+
+					defer func() {
+						done_ch <- true
+					}()
+
+					p_id, err := strconv.ParseInt(r.Id(), 10, 64)
+
+					if err != nil {
+						err_ch <- fmt.Errorf("Failed to parse ID '%s', %w", r.Id(), err)
+						return
+					}
+
+					p_body := load_feature(p_id)
+
+					if p_body == nil {
+						aa_log.Warning(logger, "Failed to load record for %d, skipping", p_id)
+						return
+					}
+
+					pt_rsp := gjson.GetBytes(p_body, "properties.sfomuseum:placetype")
+
+					if !pt_rsp.Exists() {
+						err_ch <- fmt.Errorf("Record is missing sfomuseum:placetype property")
+						return
+					}
+
+					if pt_rsp.String() == a.Name {
+						aa_log.Debug(logger, "Placetype match for %s : %s (%d)", a.Name, r.Name(), p_id)
+						spr_ch <- r
+					}
+				}(r)
+			}
+
+			remaining := len(possible)
+
+			for remaining > 0 {
+				select {
+				case <-done_ch:
+					remaining -= 1
+				case err := <-err_ch:
+					return nil, err
+				case r := <-spr_ch:
+					candidates = append(candidates, r)
+				}
+			}
+
+			if len(candidates) > 0 {
+				break
+			}
+		}
+
+		aa_log.Debug(logger, "Candidate results after placetype filtering, %d", len(candidates))
+
+		// END OF sfomuseum:placetype stuff
+
 		filtered := make([]spr.StandardPlacesResult, 0)
 
 		level_rsp := gjson.GetBytes(body, "properties.sfo:level")
@@ -101,7 +232,7 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 
 		f_level := level_rsp.Int()
 
-		for _, r := range possible {
+		for _, r := range candidates {
 
 			// log.Printf("%s (%d) %s (%s) %s\n", work.Name, work.ObjectID, r.Name(), r.Id(), r.Placetype())
 
@@ -111,16 +242,16 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 				return nil, err
 			}
 
-			p_body, err := sfom_reader.LoadBytesFromID(ctx, spatial_r, p_id)
+			p_body := load_feature(p_id)
 
-			if err != nil {
-				return nil, err
+			if p_body == nil {
+				return nil, fmt.Errorf("Failed to load feature for %d", p_id)
 			}
 
 			p_level_rsp := gjson.GetBytes(p_body, "properties.sfo:level")
 
 			if !p_level_rsp.Exists() {
-				log.Printf("Record '%d' is missing sfo:level\n", p_id)
+				aa_log.Warning(logger, "Record '%d' is missing sfo:level\n", p_id)
 				continue
 			}
 

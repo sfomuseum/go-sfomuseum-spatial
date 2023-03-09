@@ -93,6 +93,8 @@ github.com/sfomuseum/go-sfomuseum-geojson v0.1.3 h1:+OyduTQhBgVajdXFqXbX1hxuYY4I
 github.com/sfomuseum/go-sfomuseum-geojson v0.1.3/go.mod h1:s9/XT2coL6uShnA1reWOfBSOMJsDIERERxdVZQkQQjI=
 github.com/sfomuseum/go-sfomuseum-mapshaper v0.0.1 h1:ecjCnrzs1QhSi2R2jQem0y8/6oNrvmUgyM9kMKxZjtw=
 github.com/sfomuseum/go-sfomuseum-mapshaper v0.0.1/go.mod h1:+JVebjhj6f3H3ESBlO1b5pkzS2ZxaqnpUyCHxA8/too=
+github.com/sfomuseum/go-sfomuseum-placetypes v0.0.2 h1:i2IJLQYKTrwaEWnPlEiCqLm/IwrQq3zFgB76HiSFZB8=
+github.com/sfomuseum/go-sfomuseum-placetypes v0.0.2/go.mod h1:zOPg6yTuunxmoBRa+e5dOCdB4yyone33/Xu7SI4T/wU=
 github.com/sfomuseum/go-sfomuseum-reader v0.0.2 h1:S1h8jUUGegWYCcF5tbX2E2rSji4y6W4HWG3bNGyG9XM=
 github.com/sfomuseum/go-sfomuseum-reader v0.0.2/go.mod h1:ixmpeo1E4fHGiXPBxC+DQ1fpY+5suZHpZveyA0OrBUE=
 github.com/skelterjohn/geom v0.0.0-20180103142417-96f3e8a219c5 h1:qQF/q/+xaKD4CAVz3zfuvpij8U4ihSGIhHfOROI4NFc=
@@ -161,8 +163,8 @@ github.com/whosonfirst/go-whosonfirst-sources v0.1.0 h1:JuKLa6KWke22jBfJ1pM9WQHo
 github.com/whosonfirst/go-whosonfirst-sources v0.1.0/go.mod h1:EUMHyGzUmqPPxlMmOp+28BFeoBdxxE0HCKRd67lkqGM=
 github.com/whosonfirst/go-whosonfirst-spatial v0.5.6 h1:mFvkF+5qvfBauLqixiWwHX76lb0ohsvJMUnjXm+Gryo=
 github.com/whosonfirst/go-whosonfirst-spatial v0.5.6/go.mod h1:pCh4lz9GFexj865PV4/Txkjd/kdAJiyx9U2eBJ49DJk=
-github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.5.1 h1:1Azd5gKHAdpWTTAPSYO4RqYx9xIO0rA9V6U63NRaxjs=
-github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.5.1/go.mod h1:QMW/GC0TePlnP3OVclp3wTKlcsX7sdEWQD7pRp4xTEY=
+github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.6.0 h1:77n+NM0ioCFvyjTaNnKi7mzjiEM1oegBhQSXKSKfbz4=
+github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.6.0/go.mod h1:QMW/GC0TePlnP3OVclp3wTKlcsX7sdEWQD7pRp4xTEY=
 github.com/whosonfirst/go-whosonfirst-spr/v2 v2.0.0/go.mod h1:tveSSFDn8XoiCeAMarSCn769lA6e3Y0/Qi8S19Jz7Gw=
 github.com/whosonfirst/go-whosonfirst-spr/v2 v2.3.6 h1:0C1MVb2c/j81SmsDkvzhXiQ6VjBpzCNYFs8XJ6do/jQ=
 github.com/whosonfirst/go-whosonfirst-spr/v2 v2.3.6/go.mod h1:pZqrrLV+z6JXSBdDNqKAmTeC1mYtWyn/REQFOC4Z1zA=
