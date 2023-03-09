@@ -3,6 +3,7 @@ module github.com/sfomuseum/go-sfomuseum-spatial
 go 1.18
 
 require (
+	github.com/aaronland/go-log/v2 v2.0.0
 	github.com/sfomuseum/go-sfomuseum-placetypes v0.0.2
 	github.com/sfomuseum/go-sfomuseum-reader v0.0.2
 	github.com/tidwall/gjson v1.14.4
@@ -18,7 +19,6 @@ require (
 	github.com/aaronland/go-artisanal-integers v0.9.1 // indirect
 	github.com/aaronland/go-brooklynintegers-api v1.2.6 // indirect
 	github.com/aaronland/go-json-query v0.1.3 // indirect
-	github.com/aaronland/go-log/v2 v2.0.0 // indirect
 	github.com/aaronland/go-pool/v2 v2.0.0 // indirect
 	github.com/aaronland/go-roster v1.0.0 // indirect
 	github.com/aaronland/go-string v1.0.0 // indirect
