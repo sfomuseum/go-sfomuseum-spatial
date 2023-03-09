@@ -78,7 +78,8 @@ func ChoosePointInPolygonCandidate(ctx context.Context, spatial_r reader.Reader,
 
 // ChoosePointInPolygonCandidateStrict returns a SFO Museum specific whosonfirst/go-whosonfirst-spatial-hierarchy `FilterSPRResultsFunc` function
 // for use with the whosonfirst/go-whosonfirst-spatial-hierarchy `PointInPolygonHierarchyResolver.PointInPolygonAndUpdate` method. It ensures that
-// only a single match will be returned. If that criteria can not be met it will return an error.
+// only a single match will be returned. It also ensures that all possible candidates have `sfomuseum:placetype` and `sfo:level` properties which
+// match those found in 'body'. If those criteria can not be met it will return an error.
 func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.Reader, body []byte, possible []spr.StandardPlacesResult) (spr.StandardPlacesResult, error) {
 
 	logger := log.Default()

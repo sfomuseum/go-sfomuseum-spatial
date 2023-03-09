@@ -11,7 +11,7 @@ require (
 	github.com/whosonfirst/go-whosonfirst-feature v0.0.26
 	github.com/whosonfirst/go-whosonfirst-placetypes v0.7.0
 	github.com/whosonfirst/go-whosonfirst-spatial v0.5.6
-	github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.5.1
+	github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.6.0
 	github.com/whosonfirst/go-whosonfirst-spr/v2 v2.3.6
 )
 
