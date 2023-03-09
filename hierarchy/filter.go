@@ -22,10 +22,12 @@ import (
 // function for use with the whosonfirst/go-whosonfirst-spatial-hierarchy `PointInPolygonHierarchyResolver.PointInPolygonAndUpdate` method.
 func DefaultPointInPolygonToolUpdateCallback() hierarchy.PointInPolygonHierarchyResolverUpdateCallback {
 
+	logger := log.Default()
+
 	fn := func(ctx context.Context, r reader.Reader, parent_spr spr.StandardPlacesResult) (map[string]interface{}, error) {
 
 		if parent_spr == nil {
-			log.Println("SKIP")
+			aa_log.Info(logger, "Parent SPR is nil, skipping")
 			return nil, nil
 		}
 
@@ -34,13 +36,13 @@ func DefaultPointInPolygonToolUpdateCallback() hierarchy.PointInPolygonHierarchy
 		parent_id, err := strconv.ParseInt(parent_spr.Id(), 10, 64)
 
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Failed to parse parent SPR ID '%s', %w", parent_spr.Id(), err)
 		}
 
 		parent_f, err := sfom_reader.LoadBytesFromID(ctx, r, parent_id)
 
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Failed to load parent ID %d, %w", parent_id, err)
 		}
 
 		parent_hierarchy := properties.Hierarchies(parent_f)
@@ -63,13 +65,15 @@ func DefaultPointInPolygonToolUpdateCallback() hierarchy.PointInPolygonHierarchy
 // hood it invokes `ChoosePointInPolygonCandidateStrict` but return `nil` rather than an error if no matches are found.
 func ChoosePointInPolygonCandidate(ctx context.Context, spatial_r reader.Reader, body []byte, possible []spr.StandardPlacesResult) (spr.StandardPlacesResult, error) {
 
+	logger := log.Default()
+
 	rsp, err := ChoosePointInPolygonCandidateStrict(ctx, spatial_r, body, possible)
 
 	if err != nil {
 
 		id_rsp := gjson.GetBytes(body, "properties.wof:id")
 
-		log.Printf("Failed to choose point in polygon candidate for '%d', %v\n", id_rsp.Int(), err)
+		aa_log.Warning(logger, "Failed to choose point in polygon candidate for '%d', %v\n", id_rsp.Int(), err)
 		return nil, nil
 	}
 
