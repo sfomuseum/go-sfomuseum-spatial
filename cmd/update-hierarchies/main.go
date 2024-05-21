@@ -26,8 +26,11 @@ func main() {
 		log.Fatalf("Failed to derive options from flagset, %v", err)
 	}
 
+	update_func := hierarchy.DefaultPointInPolygonToolUpdateCallback()
+	
 	opts.SPRResultsFunc = hierarchy.ChoosePointInPolygonCandidate
-
+	opts.PIPUpdateFunc = update_func
+	
 	err = update.RunWithOptions(ctx, opts, logger)
 
 	if err != nil {
