@@ -9,5 +9,3 @@ Go package implementing SFO Museum specific methods for use with the [whosonfirs
 ## See also
 
 * https://github.com/whosonfirst/go-whosonfirst-spatial
-* https://github.com/whosonfirst/go-whosonfirst-spatial-pip
-* https://github.com/whosonfirst/go-whosonfirst-spatial-hierarchy

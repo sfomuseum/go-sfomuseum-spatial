@@ -10,7 +10,6 @@ require (
 	github.com/whosonfirst/go-whosonfirst-feature v0.0.27
 	github.com/whosonfirst/go-whosonfirst-placetypes v0.7.2
 	github.com/whosonfirst/go-whosonfirst-spatial v0.8.0
-	github.com/whosonfirst/go-whosonfirst-spatial-hierarchy v0.7.0
 	github.com/whosonfirst/go-whosonfirst-spr/v2 v2.3.7
 )
 

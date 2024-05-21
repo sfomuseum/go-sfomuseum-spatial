@@ -13,7 +13,7 @@ import (
 	"github.com/whosonfirst/go-reader"
 	"github.com/whosonfirst/go-whosonfirst-feature/properties"
 	wof_placetypes "github.com/whosonfirst/go-whosonfirst-placetypes"
-	"github.com/whosonfirst/go-whosonfirst-spatial-hierarchy"
+	"github.com/whosonfirst/go-whosonfirst-spatial/hierarchy"
 	"github.com/whosonfirst/go-whosonfirst-spr/v2"
 )
 
