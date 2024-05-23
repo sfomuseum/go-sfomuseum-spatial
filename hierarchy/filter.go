@@ -59,16 +59,14 @@ func DefaultPointInPolygonToolUpdateCallback() hierarchy.PointInPolygonHierarchy
 
 // ChoosePointInPolygonCandidate returns a SFO Museum specific whosonfirst/go-whosonfirst-spatial-hierarchy `FilterSPRResultsFunc` function
 // for use with the whosonfirst/go-whosonfirst-spatial-hierarchy `PointInPolygonHierarchyResolver.PointInPolygonAndUpdate` method. Under the
-// hood it invokes `ChoosePointInPolygonCandidateStrict` but return `nil` rather than an error if no matches are found.
+// hood it invokes `ChoosePointInPolygonCandidateStrict` but returns `nil` rather than an error if no matches are found.
 func ChoosePointInPolygonCandidate(ctx context.Context, spatial_r reader.Reader, body []byte, possible []spr.StandardPlacesResult) (spr.StandardPlacesResult, error) {
 
 	rsp, err := ChoosePointInPolygonCandidateStrict(ctx, spatial_r, body, possible)
 
 	if err != nil {
-
 		id_rsp := gjson.GetBytes(body, "properties.wof:id")
-
-		slog.Warn("Failed to choose point in polygon candidate", "id", id_rsp.Int(), "error", err)
+		slog.Warn("Failed to choose point in polygon candidate", "id", id_rsp.Int(), "error", err)		
 		return nil, nil
 	}
 
