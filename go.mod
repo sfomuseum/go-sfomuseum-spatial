@@ -10,7 +10,7 @@ require (
 	github.com/whosonfirst/go-whosonfirst-feature v0.0.27
 	github.com/whosonfirst/go-whosonfirst-placetypes v0.7.2
 	github.com/whosonfirst/go-whosonfirst-spatial v0.9.0
-	github.com/whosonfirst/go-whosonfirst-spatial-pmtiles v0.2.0
+	github.com/whosonfirst/go-whosonfirst-spatial-pmtiles v0.2.1
 	github.com/whosonfirst/go-whosonfirst-spr/v2 v2.3.7
 )
 
@@ -95,7 +95,7 @@ require (
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.45.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
-	github.com/protomaps/go-pmtiles v1.19.1 // indirect
+	github.com/protomaps/go-pmtiles v1.19.2 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/schollz/progressbar/v3 v3.13.1 // indirect
@@ -121,7 +121,7 @@ require (
 	github.com/whosonfirst/go-whosonfirst-names v0.1.0 // indirect
 	github.com/whosonfirst/go-whosonfirst-reader v1.0.2 // indirect
 	github.com/whosonfirst/go-whosonfirst-sources v0.1.0 // indirect
-	github.com/whosonfirst/go-whosonfirst-spatial-sqlite v0.7.0 // indirect
+	github.com/whosonfirst/go-whosonfirst-spatial-sqlite v0.8.0 // indirect
 	github.com/whosonfirst/go-whosonfirst-sql v0.0.3 // indirect
 	github.com/whosonfirst/go-whosonfirst-sqlite-features/v2 v2.0.3 // indirect
 	github.com/whosonfirst/go-whosonfirst-sqlite-spr/v2 v2.0.0 // indirect

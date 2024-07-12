@@ -253,8 +253,8 @@ github.com/prometheus/common v0.45.0 h1:2BGz0eBc2hdMDLnO/8n0jeB3oPrt2D08CekT0lne
 github.com/prometheus/common v0.45.0/go.mod h1:YJmSTw9BoKxJplESWWxlbyttQR4uaEcGyv9MZjVOJsY=
 github.com/prometheus/procfs v0.12.0 h1:jluTpSng7V9hY0O2R9DzzJHYb2xULk9VTR1V1R/k6Bo=
 github.com/prometheus/procfs v0.12.0/go.mod h1:pcuDEFsWDnvcgNzo4EEweacyhjeA9Zk3cnaOZAZEfOo=
-github.com/protomaps/go-pmtiles v1.19.1 h1:jGSJc1/rn7ENhgSp90iDuuOqtPgRcVtjgPYxba1XAF8=
-github.com/protomaps/go-pmtiles v1.19.1/go.mod h1:15LmZ1Q0XWcIT62bjLqakUaXFHPY1+9H7jnklB/szLo=
+github.com/protomaps/go-pmtiles v1.19.2 h1:7ycun335mhjnOVQLqatpwQf/Hxl00kqiLYPSYfr7du4=
+github.com/protomaps/go-pmtiles v1.19.2/go.mod h1:15LmZ1Q0XWcIT62bjLqakUaXFHPY1+9H7jnklB/szLo=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
@@ -352,10 +352,10 @@ github.com/whosonfirst/go-whosonfirst-sources v0.1.0 h1:JuKLa6KWke22jBfJ1pM9WQHo
 github.com/whosonfirst/go-whosonfirst-sources v0.1.0/go.mod h1:EUMHyGzUmqPPxlMmOp+28BFeoBdxxE0HCKRd67lkqGM=
 github.com/whosonfirst/go-whosonfirst-spatial v0.9.0 h1:uDIqg36IKvGF1XIIQnhQX/8w21dcWH3P1WPjKlzt+bk=
 github.com/whosonfirst/go-whosonfirst-spatial v0.9.0/go.mod h1:ZZDfswfjQliuqqNCrpLHW2LVwR7S7QaVMtFiTdvEQH0=
-github.com/whosonfirst/go-whosonfirst-spatial-pmtiles v0.2.0 h1:f1Hu9SF1Ttu5y7b+BtE7G+KDjLNszqKk8gaRpV3f5fE=
-github.com/whosonfirst/go-whosonfirst-spatial-pmtiles v0.2.0/go.mod h1:Xjvs1IZUWL3HbMRItp42ihdKRRurUEIVof8gdhiYF0U=
-github.com/whosonfirst/go-whosonfirst-spatial-sqlite v0.7.0 h1:UgLhrMcbi5bxROVoCaIivnP1Mnk0jMxzmI/AGFw7Tmo=
-github.com/whosonfirst/go-whosonfirst-spatial-sqlite v0.7.0/go.mod h1:rMD0+QhPPcmpRTRsC5kqn3ggSyOMOAq3pmUmi9XOMGY=
+github.com/whosonfirst/go-whosonfirst-spatial-pmtiles v0.2.1 h1:uz3/wDkvTktihImGbiC4tksDE4YLwglZ2RDiXyf0E3g=
+github.com/whosonfirst/go-whosonfirst-spatial-pmtiles v0.2.1/go.mod h1:a4QkSirC8yewCQl+PbE0ctOo36+5VnVq6UD99DyWEK0=
+github.com/whosonfirst/go-whosonfirst-spatial-sqlite v0.8.0 h1:God+dkZ4m4451vyNuK83mWeWAEc0wxZ6/qD+E/VYklk=
+github.com/whosonfirst/go-whosonfirst-spatial-sqlite v0.8.0/go.mod h1:1tEsj1JPcEcNB8lZ9k2GRxdIMoEPeJVVE9WYgtmyD2s=
 github.com/whosonfirst/go-whosonfirst-spr/v2 v2.0.0/go.mod h1:tveSSFDn8XoiCeAMarSCn769lA6e3Y0/Qi8S19Jz7Gw=
 github.com/whosonfirst/go-whosonfirst-spr/v2 v2.3.7 h1:1j4IMuVua4/NhqKm2ke16h2V5Z2XiLoOdXbjDrfZb0E=
 github.com/whosonfirst/go-whosonfirst-spr/v2 v2.3.7/go.mod h1:I2IqsIutlDrvYp37Xzwk4WGq+m/gLh+gEifiLmH0bac=
