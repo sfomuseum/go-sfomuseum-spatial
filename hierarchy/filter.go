@@ -25,7 +25,7 @@ func DefaultPointInPolygonToolUpdateCallback() hierarchy.PointInPolygonHierarchy
 	fn := func(ctx context.Context, r reader.Reader, parent_spr spr.StandardPlacesResult) (map[string]interface{}, error) {
 
 		if parent_spr == nil {
-			slog.Info("Parent SPR is nil, skipping")
+			slog.Debug("Parent SPR is nil, skipping")
 			return nil, nil
 		}
 
@@ -79,13 +79,18 @@ func ChoosePointInPolygonCandidate(ctx context.Context, spatial_r reader.Reader,
 // only a single match will be returned. It also ensures that all possible candidates have `sfomuseum:placetype` and `sfo:level` properties which
 // match those found in 'body'. If those criteria can not be met it will return an error.
 func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.Reader, body []byte, possible []spr.StandardPlacesResult) (spr.StandardPlacesResult, error) {
+	
+	id_rsp := gjson.GetBytes(body, "properties.wof:id")
 
+	logger := slog.Default()
+	logger = logger.With("context", "FILTER")
+	logger = logger.With("id", id_rsp.String())
+	
 	var parent_s spr.StandardPlacesResult
 	count := len(possible)
 
-	id_rsp := gjson.GetBytes(body, "properties.wof:id")
 
-	slog.Debug("Choose from results", "id", id_rsp.String(), "count", count)
+	logger.Debug("Choose from candidate results BEFORE filtering", "count", count)
 
 	switch count {
 	case 0:
@@ -98,36 +103,31 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 
 	default:
 
-		slog.Debug("Candidate results BEFORE placetype filtering", "id", id_rsp.String(), "count", len(possible))
-		
 		// START OF sfomuseum:placetype stuff
 
 		pt_rsp := gjson.GetBytes(body, "properties.sfomuseum:placetype")
 
 		if !pt_rsp.Exists() {
-			slog.Debug("SAD 1", "id", id_rsp.String())
 			return nil, fmt.Errorf("Record is missing sfomuseum:placetype property")
 		}
 
 		pt_spec, err := sfom_placetypes.SFOMuseumPlacetypeSpecification()
 
 		if err != nil {
-			slog.Debug("SAD 2", "id", id_rsp.String())			
 			return nil, fmt.Errorf("Failed to load SFO Museum placetype specification, %w", err)
 		}
 
 		pt, err := pt_spec.GetPlacetypeByName(pt_rsp.String())
 
 		if err != nil {
-			slog.Debug("SAD 3", "id", id_rsp.String())
 			return nil, fmt.Errorf("Failed to load placetype '%s', %w", pt_rsp.String(), err)
 		}
 
 		roles := wof_placetypes.AllRoles()
 
 		ancestors := pt_spec.AncestorsForRoles(pt, roles)
-
-		slog.Debug("Ancestors", "id", id_rsp.String(), "roles", roles, "ancestors", ancestors)
+		
+		logger.Debug("Ancestors", "roles", roles, "ancestors", ancestors)
 		
 		// First cut of possible whose sfomuseum:placetype property matches pt
 		candidates := make([]spr.StandardPlacesResult, 0)
@@ -152,7 +152,7 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 				v, err := sfom_reader.LoadBytesFromID(ctx, spatial_r, p_id)
 
 				if err != nil {
-					slog.Error("Failed to load record", "id", p_id, "error", err)
+					logger.Error("Failed to load parent record", "id", p_id, "error", err)
 				} else {
 					p_body = v
 				}
@@ -169,11 +169,11 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 
 		for _, a := range ancestors {
 
-			slog.Debug("Process ancestor", "ancestor", a)
+			logger.Debug("Process ancestor", "ancestor", a)
 
 			for _, r := range possible {
 
-				slog.Debug("Compare possible", "ancestor", a, "id", r.Id())
+				logger.Debug("Compare possible", "ancestor", a.Name, "candidate id", r.Id())
 
 				go func(r spr.StandardPlacesResult) {
 
@@ -184,7 +184,6 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 					p_id, err := strconv.ParseInt(r.Id(), 10, 64)
 
 					if err != nil {
-						slog.Debug("SAD A", "id", id_rsp.String(), "r", r.Id())						
 						err_ch <- fmt.Errorf("Failed to parse ID '%s', %w", r.Id(), err)
 						return
 					}
@@ -192,27 +191,22 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 					p_body := load_feature(p_id)
 
 					if p_body == nil {
-						slog.Debug("SAD B", "id", id_rsp.String(), "r", r.Id())												
-						slog.Warn("Failed to load record, skipping", "id", p_id)
+						logger.Warn("Failed to load record, skipping", "candidate id", p_id)
 						return
 					}
 
 					pt_rsp := gjson.GetBytes(p_body, "properties.sfomuseum:placetype")
 
 					if !pt_rsp.Exists() {
-						slog.Debug("SAD C", "id", id_rsp.String(), "r", r.Id())						
 						err_ch <- fmt.Errorf("Record is missing sfomuseum:placetype property")
 						return
 					}
 
-					slog.Debug("Placetype check", "id", r.Id(), "pt", pt.String(), "a", a.Name)
+					logger.Debug("Placetype check", "candidate id", r.Id(), "pt", pt.String(), "ancestor", a.Name)
 
 					if pt_rsp.String() == a.Name {
-
-						slog.Debug("Placetype match", "a name", a.Name, "r name", r.Name(), "id", p_id)
+						logger.Debug("Placetype MATCH", "a name", a.Name, "r name", r.Name(), "candidate id", p_id)
 						spr_ch <- r
-					} else {
-						slog.Debug("SAD D", "id", id_rsp.String(), "r", r.Id())
 					}
 				}(r)
 			}
@@ -235,7 +229,7 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 			}
 		}
 
-		slog.Debug("Candidate results AFTER placetype filtering", "id", id_rsp.String(), "count", len(candidates))
+		logger.Debug("Candidate results AFTER placetype filtering", "count", len(candidates))
 
 		// END OF sfomuseum:placetype stuff
 
@@ -271,7 +265,7 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 			p_level_rsp := gjson.GetBytes(p_body, "properties.sfo:level")
 
 			if !p_level_rsp.Exists() {
-				slog.Warn("Record is missing sfo:level", "id", p_id)
+				logger.Warn("Record is missing sfo:level", "candidate id", p_id)
 				continue
 			}
 
@@ -281,7 +275,7 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 
 				// IS SFO...
 				
-				slog.Debug("sfo:level mismatch", "parent", p_id, "parent level", p_level, "feature level", f_level, "feature id", id_rsp.String())
+				logger.Debug("sfo:level mismatch", "parent", p_id, "parent level", p_level, "feature level", f_level)
 				continue
 			}
 			
@@ -301,7 +295,7 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 		default:
 
 			for _, s := range filtered {
-				slog.Info("Filtered", "name", s.Name(), "id", s.Id())
+				logger.Info("Filtered", "name", s.Name(), "filtered id", s.Id())
 			}
 
 			return nil, fmt.Errorf("Multiple results (%d), after filtering", count)
