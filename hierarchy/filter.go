@@ -83,7 +83,7 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 	id_rsp := gjson.GetBytes(body, "properties.wof:id")
 
 	logger := slog.Default()
-	logger = logger.With("context", "FILTER")
+	// logger = logger.With("context", "FILTER")
 	logger = logger.With("id", id_rsp.String())
 	
 	var parent_s spr.StandardPlacesResult
@@ -229,6 +229,8 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 			}
 		}
 
+		// ALL OF THIS NEEDS TO BE MOVED IN TO THE OTHER BLOCK ABOVE...
+		
 		logger.Debug("Candidate results AFTER placetype filtering", "count", len(candidates))
 
 		// END OF sfomuseum:placetype stuff
@@ -241,6 +243,8 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 
 		f_level := level_rsp.Int()
 
+		logger = logger.With("level", f_level)
+		
 		filtered := make([]spr.StandardPlacesResult, 0)
 		filtered_ids := make([]int64, 0)
 		
