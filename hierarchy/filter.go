@@ -141,9 +141,6 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 
 		// logger.Debug("Ancestors", "roles", roles, "ancestors", ancestors)
 
-		// First cut of possible whose sfomuseum:placetype property matches pt
-		candidates := make([]spr.StandardPlacesResult, 0)
-
 		// Local cache of features we need to fetch in order to inspect non-SPR
 		// properties
 
@@ -175,61 +172,85 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 			return p_body
 		}
 
+		for _, p := range possible {
+			logger.Debug("POSSIBLE", "id", p.Id(), "name", p.Name(), "placetype", p.Placetype())
+		}
+
+		for _, a := range ancestors {
+			logger.Debug("ANCESTOR", "name", a.Name)
+		}
+
 		for _, a := range ancestors {
 
-			logger.Debug("Process ancestor", "ancestor", a)
+			// logger.Debug("Process ancestor (compare to possible)", "ancestor", a, "offset", idx)
 
-			for _, r := range possible {
+			for _, candidate := range possible {
 
-				logger.Debug("Compare possible", "ancestor", a.Name, "candidate id", r.Id())
+				logger.Debug("Compare placetype for candidate", "ancestor", a.Name, "candidate id", candidate.Id())
 
-				p_id, err := strconv.ParseInt(r.Id(), 10, 64)
+				candidate_id, err := strconv.ParseInt(candidate.Id(), 10, 64)
 
 				if err != nil {
-					return nil, fmt.Errorf("Failed to parse ID '%s', %w", r.Id(), err)
+					return nil, fmt.Errorf("Failed to parse candidate ID '%s', %w", candidate.Id(), err)
 				}
 
-				p_body := load_feature(p_id)
+				candidate_body := load_feature(candidate_id)
 
-				if p_body == nil {
-					logger.Warn("Failed to load record, skipping", "candidate id", p_id)
+				if candidate_body == nil {
+					logger.Warn("Failed to load record, skipping", "candidate id", candidate_id)
 					continue
 				}
 
 				// Placetype check(s)
 
-				pt_rsp := gjson.GetBytes(p_body, "properties.sfomuseum:placetype")
+				pt_rsp := gjson.GetBytes(candidate_body, "properties.sfomuseum:placetype")
 
 				if !pt_rsp.Exists() {
 					return nil, fmt.Errorf("Record is missing sfomuseum:placetype property")
 				}
 
-				logger.Debug("Placetype check", "candidate id", r.Id(), "pt", pt.String(), "ancestor", a.Name)
+				candidate_pt := pt_rsp.String()
 
-				if pt_rsp.String() != a.Name {
+				pt_match := candidate_pt == a.Name
+
+				logger.Debug("Placetype check", "candidate id", candidate_id, "candidate placetype", candidate_pt, "ancestor", a.Name, "match", pt_match)
+
+				if !pt_match {
 					continue
 				}
 
 				// Level check(s)
 
-				p_level_rsp := gjson.GetBytes(p_body, "properties.sfo:level")
-
-				if !p_level_rsp.Exists() {
-					logger.Warn("Record is missing sfo:level", "candidate id", p_id)
-					continue
+				skip_level_checks := []string{
+					"building",
+					"hotel",
+					"garage",
+					"rail",
+					"campus",
+					"airport",
 				}
 
-				p_level := p_level_rsp.Int()
+				if !slices.Contains(skip_level_checks, candidate_pt) {
 
-				if p_level != f_level {
+					c_level_rsp := gjson.GetBytes(candidate_body, "properties.sfo:level")
 
-					// IS SFO...
+					if !c_level_rsp.Exists() {
+						logger.Warn("Record is missing sfo:level", "candidate id", candidate_id)
+						continue
+					}
 
-					logger.Debug("sfo:level mismatch", "parent", p_id, "parent level", p_level, "feature level", f_level)
-					continue
+					candidate_level := c_level_rsp.Int()
+
+					level_match := candidate_level == f_level
+
+					logger.Debug("sfo:level check", "candidate", candidate_id, "candidate level", candidate_level, "feature level", f_level, "match", level_match)
+
+					if !level_match {
+						continue
+					}
 				}
 
-				parent_s = r
+				parent_s = candidate
 				break
 			}
 		}
@@ -238,152 +259,7 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 			return nil, fmt.Errorf("Unable to derive parent record")
 		}
 
+		logger.Debug("OKAY", "parent", parent_s.Id(), "name", parent_s.Name())
 		return parent_s, nil
-
-		// Old code...
-
-		spr_ch := make(chan spr.StandardPlacesResult)
-		err_ch := make(chan error)
-		done_ch := make(chan bool)
-
-		for _, a := range ancestors {
-
-			logger.Debug("Process ancestor", "ancestor", a)
-
-			for _, r := range possible {
-
-				logger.Debug("Compare possible", "ancestor", a.Name, "candidate id", r.Id())
-
-				go func(r spr.StandardPlacesResult) {
-
-					defer func() {
-						done_ch <- true
-					}()
-
-					p_id, err := strconv.ParseInt(r.Id(), 10, 64)
-
-					if err != nil {
-						err_ch <- fmt.Errorf("Failed to parse ID '%s', %w", r.Id(), err)
-						return
-					}
-
-					p_body := load_feature(p_id)
-
-					if p_body == nil {
-						logger.Warn("Failed to load record, skipping", "candidate id", p_id)
-						return
-					}
-
-					pt_rsp := gjson.GetBytes(p_body, "properties.sfomuseum:placetype")
-
-					if !pt_rsp.Exists() {
-						err_ch <- fmt.Errorf("Record is missing sfomuseum:placetype property")
-						return
-					}
-
-					logger.Debug("Placetype check", "candidate id", r.Id(), "pt", pt.String(), "ancestor", a.Name)
-
-					if pt_rsp.String() == a.Name {
-						logger.Debug("Placetype MATCH", "a name", a.Name, "r name", r.Name(), "candidate id", p_id)
-						spr_ch <- r
-					}
-				}(r)
-			}
-
-			remaining := len(possible)
-
-			for remaining > 0 {
-				select {
-				case <-done_ch:
-					remaining -= 1
-				case err := <-err_ch:
-					return nil, err
-				case r := <-spr_ch:
-					candidates = append(candidates, r)
-				}
-			}
-
-			if len(candidates) > 0 {
-				break
-			}
-		}
-
-		// ALL OF THIS NEEDS TO BE MOVED IN TO THE OTHER BLOCK ABOVE...
-
-		logger.Debug("Candidate results AFTER placetype filtering", "count", len(candidates))
-
-		// END OF sfomuseum:placetype stuff
-
-		level_rsp = gjson.GetBytes(body, "properties.sfo:level")
-
-		if !level_rsp.Exists() {
-			return nil, fmt.Errorf("Record is missing sfo:level\n")
-		}
-
-		f_level = level_rsp.Int()
-
-		logger = logger.With("level", f_level)
-
-		filtered := make([]spr.StandardPlacesResult, 0)
-		filtered_ids := make([]int64, 0)
-
-		for _, r := range candidates {
-
-			p_id, err := strconv.ParseInt(r.Id(), 10, 64)
-
-			if err != nil {
-				return nil, err
-			}
-
-			if slices.Contains(filtered_ids, p_id) {
-				continue
-			}
-
-			p_body := load_feature(p_id)
-
-			if p_body == nil {
-				return nil, fmt.Errorf("Failed to load feature for %d", p_id)
-			}
-
-			p_level_rsp := gjson.GetBytes(p_body, "properties.sfo:level")
-
-			if !p_level_rsp.Exists() {
-				logger.Warn("Record is missing sfo:level", "candidate id", p_id)
-				continue
-			}
-
-			p_level := p_level_rsp.Int()
-
-			if p_level != f_level {
-
-				// IS SFO...
-
-				logger.Debug("sfo:level mismatch", "parent", p_id, "parent level", p_level, "feature level", f_level)
-				continue
-			}
-
-			filtered = append(filtered, r)
-			filtered_ids = append(filtered_ids, p_id)
-		}
-
-		count := len(filtered)
-
-		switch count {
-		case 0:
-
-			//
-			return nil, fmt.Errorf("No results, AFTER sfo:level filtering")
-		case 1:
-			parent_s = filtered[0]
-		default:
-
-			for _, s := range filtered {
-				logger.Info("Filtered", "name", s.Name(), "filtered id", s.Id())
-			}
-
-			return nil, fmt.Errorf("Multiple results (%d), after filtering", count)
-		}
 	}
-
-	return parent_s, nil
 }
