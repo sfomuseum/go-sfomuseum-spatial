@@ -253,6 +253,10 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 				parent_s = candidate
 				break
 			}
+
+			if parent_s != nil {
+				break
+			}
 		}
 
 		if parent_s == nil {
