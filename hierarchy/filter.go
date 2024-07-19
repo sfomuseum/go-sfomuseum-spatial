@@ -146,8 +146,6 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 
 		features := new(sync.Map)
 
-		// Local function for fetching/cache features
-
 		load_feature := func(p_id int64) []byte {
 
 			var p_body []byte
@@ -172,6 +170,18 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 			return p_body
 		}
 
+		// List of place types where sfo:level checks don't make any sense
+		
+		skip_level_checks := []string{
+			"building",
+			"hotel",
+			"garage",
+			"rail",
+			"campus",
+			"airport",
+		}
+
+		/*
 		for _, p := range possible {
 			logger.Debug("POSSIBLE", "id", p.Id(), "name", p.Name(), "placetype", p.Placetype())
 		}
@@ -179,7 +189,8 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 		for _, a := range ancestors {
 			logger.Debug("ANCESTOR", "name", a.Name)
 		}
-
+		*/
+		
 		for _, a := range ancestors {
 
 			// logger.Debug("Process ancestor (compare to possible)", "ancestor", a, "offset", idx)
@@ -221,17 +232,9 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 
 				// Level check(s)
 
-				skip_level_checks := []string{
-					"building",
-					"hotel",
-					"garage",
-					"rail",
-					"campus",
-					"airport",
-				}
-
-				if !slices.Contains(skip_level_checks, candidate_pt) {
-
+				if slices.Contains(skip_level_checks, candidate_pt) {
+					slog.Debug("Skip level checks because candidate placetype", "candidate id", candidate_id, "candidate placetype", candidate_pt)
+				} else {
 					c_level_rsp := gjson.GetBytes(candidate_body, "properties.sfo:level")
 
 					if !c_level_rsp.Exists() {
@@ -263,7 +266,6 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 			return nil, fmt.Errorf("Unable to derive parent record")
 		}
 
-		logger.Debug("OKAY", "parent", parent_s.Id(), "name", parent_s.Name())
 		return parent_s, nil
 	}
 }
