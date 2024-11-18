@@ -439,7 +439,7 @@ github.com/sfomuseum/go-sfomuseum-geojson/feature
 # github.com/sfomuseum/go-sfomuseum-mapshaper v0.0.3
 ## explicit; go 1.22
 github.com/sfomuseum/go-sfomuseum-mapshaper
-# github.com/sfomuseum/go-sfomuseum-placetypes v0.0.5
+# github.com/sfomuseum/go-sfomuseum-placetypes v0.0.6
 ## explicit; go 1.23
 github.com/sfomuseum/go-sfomuseum-placetypes
 # github.com/sfomuseum/go-sfomuseum-reader v0.0.2
