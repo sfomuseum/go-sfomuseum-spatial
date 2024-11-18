@@ -26,9 +26,7 @@ Here's an example of the creating a compatible SQLite database for all the [admi
 ```
 $> ./bin/wof-sqlite-index-features \
 	-index-alt-files \
-	-rtree \
-	-spr \
-	-properties \
+	-spatial-tables \
 	-timings \
 	-dsn /usr/local/ca-alt.db \
 	-mode repo:// \
@@ -49,7 +47,7 @@ $> ./bin/wof-sqlite-index-features \
 And then...
 
 ```
-$> ./bin/query \
+$> ./bin/pip \
 	-database-uri 'sqlite://?dsn=/usr/local/data/ca-alt.db' \
 	-latitude 45.572744 \
 	-longitude -73.586295
@@ -126,10 +124,10 @@ _To be written_
 
 ## Tools
 
-### query
+### pip
 
 ```
-$> ./bin/query -h
+$> ./bin/pip -h
   -alternate-geometry value
     	One or more alternate geometry labels (wof:alt_label) values to filter results by.
   -cessation-date string
@@ -173,7 +171,7 @@ $> ./bin/query -h
 For example:
 
 ```
-$> ./bin/query \
+$> ./bin/pip \
 	-spatial-database-uri 'sqlite://?dsn=/usr/local/data/sfomuseum-data-architecture.db' \
 	-latitude 37.616951 \
 	-longitude -122.383747 \
@@ -240,7 +238,7 @@ $> ./bin/query \
 It is possible to filter results by one or more existential flags (`-is-current`, `-is-ceased`, `-is-deprecated`, `-is-superseded`, `-is-superseding`). For example, this query for a point at SFO airport returns 24 possible candidates:
 
 ```
-$> ./bin/query \
+$> ./bin/pip \
 	-spatial-database-uri 'sqlite://?dsn=/usr/local/data/sfom-arch.db' \
 	-latitude 37.616951 \
 	-longitude -122.383747
@@ -254,7 +252,7 @@ $> ./bin/query \
 But when filtered using the `-is-current 1` flag there is only a single result:
 
 ```
-> ./bin/query \
+> ./bin/pip \
 	-spatial-database-uri 'sqlite://?dsn=/usr/local/data/sfom-arch.db' \
 	-latitude 37.616951 \
 	-longitude -122.383747 \
@@ -295,7 +293,7 @@ But when filtered using the `-is-current 1` flag there is only a single result:
 You can also filter results to one or more specific alternate geometry labels. For example here are the `quattroshapes` and `whosonfirst-reversegeo` geometries for a point in the city of Montreal, using a SQLite database created from the `whosonfirst-data-admin-ca` database:
 
 ```
-$> ./bin/query \
+$> ./bin/pip \
 	-spatial-database-uri 'sqlite://?dsn=/usr/local/data/ca-alt.db' \
 	-latitude 45.572744 \
 	-longitude -73.586295 \
@@ -325,7 +323,7 @@ $> ./bin/wof-sqlite-index-features \
 The exclude alternate geometries from query results pass the `-geometries default` flag:
 
 ```
-$> ./bin/query \
+$> ./bin/pip \
 	-spatial-database-uri 'sqlite://?dsn=/usr/local/data/ca-alt.db' \
 	-latitude 45.572744 \
 	-longitude -73.586295 \
@@ -344,7 +342,7 @@ $> ./bin/query \
 To limit query results to _only_ alternate geometries pass the `-geometries alternate` flag:
 
 ```
-$> ./bin/query \
+$> ./bin/pip \
 	-spatial-database-uri 'sqlite://?dsn=/usr/local/data/ca-alt.db' \
 	-latitude 45.572744 \
 	-longitude -73.586295 \
@@ -364,7 +362,7 @@ $> ./bin/query \
 Support for remotely-hosted SQLite databases is available. For example:
 
 ```
-$> go run -mod vendor cmd/query/main.go \
+$> go run -mod vendor cmd/pip/main.go \
 	-spatial-database-uri 'sqlite://?dsn=http://localhost:8080/sfomuseum-architecture.db' \
 	-latitude 37.616951 \
 	-longitude -122.383747 \
@@ -381,36 +379,10 @@ $> go run -mod vendor cmd/query/main.go \
 
 _Big thanks to @psanford 's [sqlitevfshttp](https://github.com/psanford/sqlite3vfshttp) package for making this possible._
 
-## Interfaces
-
-This package implements the following [go-whosonfirst-spatial](#) interfaces.
-
-### spatial.SpatialDatabase
+### http-server
 
 ```
-import (
-	"github.com/whosonfirst/go-whosonfirst-spatial/database"
-	_ "github.com/whosonfirst/go-whosonfirst-spatial-sqlite"       
-)
-
-db, err := database.NewSpatialDatabase(ctx, "sqlite://?dsn={DSN}")
-```
-
-### spatial.PropertiesReader
-
-```
-import (
-	"github.com/whosonfirst/go-whosonfirst-spatial/properties"
-	_ "github.com/whosonfirst/go-whosonfirst-spatial-sqlite"       
-)
-
-pr, err := properties.NewPropertiesReader(ctx, "sqlite://?dsn={DSN}")
-```
-
-## server
-
-```
-> ./bin/server -h
+> ./bin/http-server -h
   -authenticator-uri string
     	A valid sfomuseum/go-http-auth URI. (default "null://")
   -cors-allow-credentials
@@ -466,7 +438,7 @@ pr, err := properties.NewPropertiesReader(ctx, "sqlite://?dsn={DSN}")
 For example:
 
 ```
-$> bin/server \
+$> bin/http-server \
 	-enable-www \
 	-spatial-database-uri 'sqlite:///?dsn=modernc:///usr/local/data/sfomuseum-data-architecture.db'
 ```
@@ -482,7 +454,7 @@ When you visit `http://localhost:8080` in your web browser you should see someth
 If you don't need, or want, to expose a user-facing interface simply remove the `-enable-www` and `-nextzen-apikey` flags. For example:
 
 ```
-$> bin/server \
+$> bin/http-server \
 	-spatial-database-uri 'sqlite:///?dsn=modernc:///usr/local/data/sfomuseum-data-architecture.db' 
 ```
 
@@ -527,7 +499,7 @@ By default, results are returned as a list of ["standard places response"](https
 
 
 ```
-$> bin/server \
+$> bin/http-server \
 	-enable-geojson \
 	-spatial-database-uri 'sqlite:///?dsn=modernc:///usr/local/data/sfomuseum-data-architecture.db'
 ```
@@ -578,10 +550,97 @@ $> curl -s -XPOST -H 'Accept: application/geo+json' 'http://localhost:8080/api/p
 }  
 ```
 
+### grpc-server
+
+```
+$> ./bin/grpc-server -h
+  -custom-placetypes string
+    	A JSON-encoded string containing custom placetypes defined using the syntax described in the whosonfirst/go-whosonfirst-placetypes repository.
+  -enable-custom-placetypes
+    	Enable wof:placetype values that are not explicitly defined in the whosonfirst/go-whosonfirst-placetypes repository.
+  -host string
+    	The host to listen for requests on (default "localhost")
+  -is-wof
+    	Input data is WOF-flavoured GeoJSON. (Pass a value of '0' or 'false' if you need to index non-WOF documents. (default true)
+  -iterator-uri string
+    	A valid whosonfirst/go-whosonfirst-iterate/v2 URI. Supported schemes are: directory://, featurecollection://, file://, filelist://, geojsonl://, null://, repo://. (default "repo://")
+  -port int
+    	The port to listen for requests on (default 8082)
+  -properties-reader-uri string
+    	A valid whosonfirst/go-reader.Reader URI. Available options are: [fs:// null:// repo:// sqlite:// stdin://]. If the value is {spatial-database-uri} then the value of the '-spatial-database-uri' implements the reader.Reader interface and will be used.
+  -spatial-database-uri string
+    	A valid whosonfirst/go-whosonfirst-spatial/data.SpatialDatabase URI. options are: [rtree:// sqlite://] (default "rtree://")
+```	
+
+For example:
+
+```
+$> ./bin/grpc-server -spatial-database-uri 'sqlite://?dsn=modernc:///usr/local/data/arch.db' 
+2024/07/19 10:52:47 Listening on localhost:8082
+```
+
+And then in another terminal:
+
+```
+$> ./bin/grpc-client -latitude 37.621131 -longitude -122.384292 | jq '.places[]["name"]'
+"San Francisco International Airport"
+```
+
+### grpc-client
+
+```
+$> ./bin/grpc-client -h
+  -alternate-geometry value
+    	One or more alternate geometry labels (wof:alt_label) values to filter results by.
+  -cessation string
+    	A valid EDTF date string.
+  -geometries string
+    	Valid options are: all, alt, default. (default "all")
+  -host string
+    	The host of the gRPC server to connect to. (default "localhost")
+  -inception string
+    	A valid EDTF date string.
+  -is-ceased value
+    	One or more existential flags (-1, 0, 1) to filter results by.
+  -is-current value
+    	One or more existential flags (-1, 0, 1) to filter results by.
+  -is-deprecated value
+    	One or more existential flags (-1, 0, 1) to filter results by.
+  -is-superseded value
+    	One or more existential flags (-1, 0, 1) to filter results by.
+  -is-superseding value
+    	One or more existential flags (-1, 0, 1) to filter results by.
+  -latitude float
+    	A valid latitude.
+  -longitude float
+    	A valid longitude.
+  -null
+    	Emit results to /dev/null
+  -placetype value
+    	One or more place types to filter results by.
+  -port int
+    	The port of the gRPC server to connect to. (default 8082)
+  -property value
+    	One or more Who's On First properties to append to each result.
+  -sort-uri value
+    	Zero or more whosonfirst/go-whosonfirst-spr/sort URIs.
+  -stdout
+    	Emit results to STDOUT (default true)
+```
+
+For example:
+
+```
+$> ./bin/grpc-client -latitude 37.621131 -longitude -122.384292 | jq '.places[]["name"]'
+"San Francisco International Airport"
+```
+
 ## See also
 
-* https://www.sqlite.org/rtree.html
 * https://github.com/whosonfirst/go-whosonfirst-spatial
+* https://github.com/whosonfirst/go-whosonfirst-spatial-www
+* https://github.com/whosonfirst/go-whosonfirst-spatial-grpc
 * https://github.com/whosonfirst/go-whosonfirst-sqlite
 * https://github.com/whosonfirst/go-whosonfirst-sqlite-features
+* https://github.com/whosonfirst/go-whosonfirst-sqlite-features-index
 * https://github.com/whosonfirst/go-reader
