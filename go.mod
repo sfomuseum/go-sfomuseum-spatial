@@ -3,7 +3,7 @@ module github.com/sfomuseum/go-sfomuseum-spatial
 go 1.23
 
 require (
-	github.com/sfomuseum/go-sfomuseum-placetypes v0.0.4
+	github.com/sfomuseum/go-sfomuseum-placetypes v0.0.5
 	github.com/sfomuseum/go-sfomuseum-reader v0.0.2
 	github.com/tidwall/gjson v1.18.0
 	github.com/whosonfirst/go-reader v1.0.2
