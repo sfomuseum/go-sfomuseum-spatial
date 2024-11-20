@@ -1,11 +1,18 @@
 package main
 
+/*
+
+> ./bin/update-hierarchies -spatial-database-uri 'sqlite://?dsn=modernc://mem' -mapshaper-server 'https://yb24546shyxuqufemxl6haudwa0bdsab.lambda-url.us-west-2.on.aws' -iterator-uri featurecollection:// -spatial-iterator-uri 'repo://?include=properties.mz:is_current=1' -spatial-source /usr/local/data/sfomuseum-data-architecture -writer-uri stdout:// ~/Desktop/walkway.geojson
+
+*/
+
 import (
 	"context"
 	"log"
 
-	sfom_hierarchy "github.com/sfomuseum/go-sfomuseum-spatial/hierarchy"
 	_ "github.com/whosonfirst/go-whosonfirst-spatial-pmtiles"
+	
+	sfom_hierarchy "github.com/sfomuseum/go-sfomuseum-spatial/hierarchy"
 	wof_update "github.com/whosonfirst/go-whosonfirst-spatial/app/hierarchy/update"
 )
 
