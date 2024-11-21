@@ -144,6 +144,12 @@ github.com/aaronland/gocloud-blob/s3
 # github.com/aaronland/gocloud-docstore v0.0.8
 ## explicit; go 1.23
 github.com/aaronland/gocloud-docstore
+# github.com/aws/aws-lambda-go v1.47.0
+## explicit; go 1.18
+github.com/aws/aws-lambda-go/lambda
+github.com/aws/aws-lambda-go/lambda/handlertrace
+github.com/aws/aws-lambda-go/lambda/messages
+github.com/aws/aws-lambda-go/lambdacontext
 # github.com/aws/aws-sdk-go v1.55.5
 ## explicit; go 1.19
 github.com/aws/aws-sdk-go/aws
@@ -572,6 +578,12 @@ github.com/sfomuseum/go-sfomuseum-placetypes
 # github.com/sfomuseum/go-sfomuseum-reader v0.0.2
 ## explicit; go 1.12
 github.com/sfomuseum/go-sfomuseum-reader
+# github.com/sfomuseum/go-timings v1.4.0
+## explicit; go 1.22
+github.com/sfomuseum/go-timings
+# github.com/sfomuseum/iso8601duration v1.1.0
+## explicit; go 1.18
+github.com/sfomuseum/iso8601duration
 # github.com/skelterjohn/geom v0.0.0-20180103142417-96f3e8a219c5
 ## explicit
 github.com/skelterjohn/geom
@@ -660,12 +672,15 @@ github.com/whosonfirst/go-whosonfirst-sources/sources
 ## explicit; go 1.23
 github.com/whosonfirst/go-whosonfirst-spatial
 github.com/whosonfirst/go-whosonfirst-spatial/app/hierarchy/update
+github.com/whosonfirst/go-whosonfirst-spatial/app/pip
+github.com/whosonfirst/go-whosonfirst-spatial/application
 github.com/whosonfirst/go-whosonfirst-spatial/database
 github.com/whosonfirst/go-whosonfirst-spatial/filter
 github.com/whosonfirst/go-whosonfirst-spatial/flags
 github.com/whosonfirst/go-whosonfirst-spatial/geo
 github.com/whosonfirst/go-whosonfirst-spatial/hierarchy
 github.com/whosonfirst/go-whosonfirst-spatial/hierarchy/filter
+github.com/whosonfirst/go-whosonfirst-spatial/pip
 # github.com/whosonfirst/go-whosonfirst-spatial-pmtiles v0.4.0
 ## explicit; go 1.23
 github.com/whosonfirst/go-whosonfirst-spatial-pmtiles
@@ -676,6 +691,7 @@ github.com/whosonfirst/go-whosonfirst-spatial-sqlite/wkttoorb
 # github.com/whosonfirst/go-whosonfirst-spr/v2 v2.3.7
 ## explicit; go 1.18
 github.com/whosonfirst/go-whosonfirst-spr/v2
+github.com/whosonfirst/go-whosonfirst-spr/v2/sort
 # github.com/whosonfirst/go-whosonfirst-sql v0.0.3
 ## explicit; go 1.21.3
 github.com/whosonfirst/go-whosonfirst-sql/tables

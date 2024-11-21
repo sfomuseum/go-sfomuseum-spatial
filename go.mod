@@ -45,6 +45,7 @@ require (
 	github.com/aaronland/go-uid-whosonfirst v0.0.5 // indirect
 	github.com/aaronland/gocloud-blob v0.3.1 // indirect
 	github.com/aaronland/gocloud-docstore v0.0.8 // indirect
+	github.com/aws/aws-lambda-go v1.47.0 // indirect
 	github.com/aws/aws-sdk-go v1.55.5 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.30.4 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.4 // indirect
@@ -122,6 +123,8 @@ require (
 	github.com/sfomuseum/go-flags v0.10.0 // indirect
 	github.com/sfomuseum/go-sfomuseum-geojson v0.1.3 // indirect
 	github.com/sfomuseum/go-sfomuseum-mapshaper v0.0.3 // indirect
+	github.com/sfomuseum/go-timings v1.4.0 // indirect
+	github.com/sfomuseum/iso8601duration v1.1.0 // indirect
 	github.com/skelterjohn/geom v0.0.0-20180103142417-96f3e8a219c5 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
