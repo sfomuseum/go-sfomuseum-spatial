@@ -4,18 +4,17 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/sfomuseum/go-flags/flagset"
 	"github.com/sfomuseum/go-flags/multi"
-	"github.com/whosonfirst/go-reader"
+	"github.com/whosonfirst/go-reader/v2"
+	iter_flags "github.com/whosonfirst/go-whosonfirst-iterate/v3/flags"
 	"github.com/whosonfirst/go-whosonfirst-spatial/database"
-	spatial_flags "github.com/whosonfirst/go-whosonfirst-spatial/flags"
 )
 
 var spatial_database_uri string
 var properties_reader_uri string
-
-var is_wof bool
 
 var enable_custom_placetypes bool
 var custom_placetypes string
@@ -45,7 +44,7 @@ var verbose bool
 
 var sort_uris multi.MultiString
 
-var iterator_uris spatial_flags.MultiIteratorURIFlag
+var iterator_uris iter_flags.MultiIteratorURIFlag
 
 func DefaultFlagSet(ctx context.Context) (*flag.FlagSet, error) {
 
@@ -56,18 +55,16 @@ func DefaultFlagSet(ctx context.Context) (*flag.FlagSet, error) {
 
 	fs.StringVar(&spatial_database_uri, "spatial-database-uri", "rtree://", desc_databases)
 
-	available_readers := reader.Schemes()
+	available_readers := reader.ReaderSchemes()
 	desc_readers := fmt.Sprintf("A valid whosonfirst/go-reader.Reader URI. Available options are: %s", available_readers)
 
 	fs.StringVar(&properties_reader_uri, "properties-reader-uri", "", fmt.Sprintf("%s. If the value is {spatial-database-uri} then the value of the '-spatial-database-uri' implements the reader.Reader interface and will be used.", desc_readers))
-
-	fs.BoolVar(&is_wof, "is-wof", true, "Input data is WOF-flavoured GeoJSON. (Pass a value of '0' or 'false' if you need to index non-WOF documents.")
 
 	fs.BoolVar(&enable_custom_placetypes, "enable-custom-placetypes", false, "Enable wof:placetype values that are not explicitly defined in the whosonfirst/go-whosonfirst-placetypes repository.")
 
 	fs.StringVar(&custom_placetypes, "custom-placetypes", "", "A JSON-encoded string containing custom placetypes defined using the syntax described in the whosonfirst/go-whosonfirst-placetypes repository.")
 
-	fs.BoolVar(&verbose, "verbose", false, "Be chatty.")
+	fs.BoolVar(&verbose, "verbose", false, "Enable verbose (debug) logging.")
 
 	// query flags
 
@@ -94,15 +91,21 @@ func DefaultFlagSet(ctx context.Context) (*flag.FlagSet, error) {
 
 	// Indexing flags
 
-	desc_iter := spatial_flags.IteratorURIFlagDescription()
+	desc_iter := iter_flags.IteratorURIFlagDescription()
 	desc_iter = fmt.Sprintf("Zero or more URIs denoting data sources to use for indexing the spatial database at startup. %s", desc_iter)
 
 	fs.Var(&iterator_uris, "iterator-uri", desc_iter)
 
 	// Runtime / server flags
 
-	fs.StringVar(&mode, "mode", "cli", "Valid options are: cli")
-	fs.StringVar(&server_uri, "server-uri", "http://localhost:8080", "A valid aaronland/go-http-server URI.")
+	fs.StringVar(&mode, "mode", "cli", "Valid options are: cli, lambda.")
+
+	fs.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Perform an point-in-polygon operation for an input latitude, longitude coordinate and on a set of Who's on First records stored in a spatial database.\n")
+		fmt.Fprintf(os.Stderr, "Usage:\n\t %s [options]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Valid options are:\n\n")
+		fs.PrintDefaults()
+	}
 
 	return fs, nil
 }

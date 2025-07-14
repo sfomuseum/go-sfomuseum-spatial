@@ -8,14 +8,15 @@ import (
 
 	"github.com/sfomuseum/go-flags/flagset"
 	"github.com/sfomuseum/go-flags/multi"
-	spatial_flags "github.com/whosonfirst/go-whosonfirst-spatial/flags"
+	iter_flags "github.com/whosonfirst/go-whosonfirst-iterate/v3/flags"
 )
 
-var source_iterator_uris spatial_flags.MultiIteratorURIFlag
-var target_iterator_uris spatial_flags.MultiIteratorURIFlag
+var source_iterator_uris iter_flags.MultiIteratorURIFlag
+var target_iterator_uris iter_flags.MultiIteratorURIFlag
 
 var exporter_uri string
 var writer_uri string
+var verbose bool
 
 var spatial_database_uri string
 var mapshaper_server string
@@ -30,7 +31,7 @@ func DefaultFlagSet(ctx context.Context) (*flag.FlagSet, error) {
 
 	fs := flagset.NewFlagSet("pip")
 
-	desc_iter := spatial_flags.IteratorURIFlagDescription()
+	desc_iter := iter_flags.IteratorURIFlagDescription()
 
 	source_desc := fmt.Sprintf("Zero or more URIs denoting data sources to use for indexing the spatial database at startup. %s", desc_iter)
 	target_desc := fmt.Sprintf("Zero or more URIs denoting target data sources whose hierarchies need updating. %s", desc_iter)
@@ -54,6 +55,8 @@ func DefaultFlagSet(ctx context.Context) (*flag.FlagSet, error) {
 	fs.Var(&is_superseded, "is-superseded", "One or more existential flags (-1, 0, 1) to filter PIP results.")
 
 	fs.Var(&is_superseding, "is-superseding", "One or more existential flags (-1, 0, 1) to filter PIP results.")
+
+	fs.BoolVar(&verbose, "verbose", false, "Enable (verbose) debug logging.")
 
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Perform point-in-polygon (PIP), and related update, operations on a set of Who's on First records.\n")

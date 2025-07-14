@@ -9,11 +9,11 @@ import (
 	"sync"
 
 	sfom_placetypes "github.com/sfomuseum/go-sfomuseum-placetypes"
-	sfom_reader "github.com/sfomuseum/go-sfomuseum-reader"
 	"github.com/tidwall/gjson"
-	"github.com/whosonfirst/go-reader"
+	"github.com/whosonfirst/go-reader/v2"
 	"github.com/whosonfirst/go-whosonfirst-feature/properties"
 	wof_placetypes "github.com/whosonfirst/go-whosonfirst-placetypes"
+	wof_reader "github.com/whosonfirst/go-whosonfirst-reader/v2"
 	"github.com/whosonfirst/go-whosonfirst-spatial/hierarchy"
 	"github.com/whosonfirst/go-whosonfirst-spr/v2"
 )
@@ -37,7 +37,7 @@ func DefaultPointInPolygonToolUpdateCallback() hierarchy.PointInPolygonHierarchy
 			return nil, fmt.Errorf("Failed to parse parent SPR ID '%s', %w", parent_spr.Id(), err)
 		}
 
-		parent_f, err := sfom_reader.LoadBytesFromID(ctx, r, parent_id)
+		parent_f, err := wof_reader.LoadBytes(ctx, r, parent_id)
 
 		if err != nil {
 			return nil, fmt.Errorf("Failed to load parent ID %d, %w", parent_id, err)
@@ -156,7 +156,7 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 				p_body = v.([]byte)
 			} else {
 
-				v, err := sfom_reader.LoadBytesFromID(ctx, spatial_r, p_id)
+				v, err := wof_reader.LoadBytes(ctx, spatial_r, p_id)
 
 				if err != nil {
 					logger.Error("Failed to load parent record", "parent id", p_id, "error", err)
@@ -171,7 +171,7 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 		}
 
 		// List of place types where sfo:level checks don't make any sense
-		
+
 		skip_level_checks := []string{
 			"building",
 			"hotel",
@@ -181,16 +181,6 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 			"airport",
 		}
 
-		/*
-		for _, p := range possible {
-			logger.Debug("POSSIBLE", "id", p.Id(), "name", p.Name(), "placetype", p.Placetype())
-		}
-
-		for _, a := range ancestors {
-			logger.Debug("ANCESTOR", "name", a.Name)
-		}
-		*/
-		
 		for _, a := range ancestors {
 
 			// logger.Debug("Process ancestor (compare to possible)", "ancestor", a, "offset", idx)
@@ -230,6 +220,8 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 					continue
 				}
 
+				logger.Info("WOO")
+
 				// Level check(s)
 
 				if slices.Contains(skip_level_checks, candidate_pt) {
@@ -246,7 +238,7 @@ func ChoosePointInPolygonCandidateStrict(ctx context.Context, spatial_r reader.R
 
 					level_match := candidate_level == f_level
 
-					logger.Debug("sfo:level check", "candidate", candidate_id, "candidate level", candidate_level, "feature level", f_level, "match", level_match)
+					logger.Warn("sfo:level check", "candidate", candidate_id, "candidate level", candidate_level, "feature level", f_level, "match", level_match)
 
 					if !level_match {
 						continue

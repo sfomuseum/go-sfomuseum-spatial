@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build !(linux && (amd64 || arm64 || loong64 || ppc64le || s390x || riscv64 || 386 || arm))
+
 package libc // import "modernc.org/libc"
 
 import (
@@ -37,7 +39,10 @@ type TLS struct {
 	errnop      uintptr
 	allocaStack [][]uintptr
 	allocas     []uintptr
+	jumpBuffers []uintptr
+	lastError   uint32
 	pthreadData
+	sp    int
 	stack stackHeader
 
 	ID                 int32
@@ -63,6 +68,11 @@ func newTLS(detached bool) *TLS {
 	return t
 }
 
+// StackSlots reports the number of tls stack slots currently in use.
+func (tls *TLS) StackSlots() int {
+	return tls.sp
+}
+
 func (t *TLS) alloca(n size_t) (r uintptr) {
 	r = Xmalloc(t, n)
 	t.allocas = append(t.allocas, r)
@@ -80,6 +90,29 @@ func (t *TLS) FreeAlloca() func() {
 		t.allocas = t.allocaStack[n-1]
 		t.allocaStack = t.allocaStack[:n-1]
 	}
+}
+
+func (tls *TLS) PushJumpBuffer(jb uintptr) {
+	tls.jumpBuffers = append(tls.jumpBuffers, jb)
+}
+
+type LongjmpRetval int32
+
+func (tls *TLS) PopJumpBuffer(jb uintptr) {
+	n := len(tls.jumpBuffers)
+	if n == 0 || tls.jumpBuffers[n-1] != jb {
+		panic(todo("unsupported setjmp/longjmp usage"))
+	}
+
+	tls.jumpBuffers = tls.jumpBuffers[:n-1]
+}
+
+func (tls *TLS) Longjmp(jb uintptr, val int32) {
+	tls.PopJumpBuffer(jb)
+	if val == 0 {
+		val = 1
+	}
+	panic(LongjmpRetval(val))
 }
 
 func Xalloca(tls *TLS, size size_t) uintptr {
@@ -156,7 +189,7 @@ func Xpthread_attr_setstacksize(t *TLS, attr uintptr, stackSize types.Size_t) in
 	if __ccgo_strace {
 		trc("t=%v attr=%v stackSize=%v, (%v:)", t, attr, stackSize, origin(2))
 	}
-	panic(todo(""))
+	return 0
 }
 
 // Go side data of pthread_cond_t.
@@ -394,6 +427,8 @@ func (m *mutex) lock(id int32) int32 {
 	// shall return zero; otherwise, an error number shall be returned to indicate
 	// the error.
 	switch m.typ {
+	default:
+		fallthrough
 	case pthread.PTHREAD_MUTEX_NORMAL:
 		// If the mutex type is PTHREAD_MUTEX_NORMAL, deadlock detection shall not be
 		// provided. Attempting to relock the mutex causes deadlock. If a thread
@@ -420,10 +455,9 @@ func (m *mutex) lock(id int32) int32 {
 
 			m.Unlock()
 			m.wait.Lock()
+			// intentional empty section - wake up other waiters
 			m.wait.Unlock()
 		}
-	default:
-		panic(todo("", m.typ))
 	}
 }
 
@@ -433,6 +467,8 @@ func (m *mutex) tryLock(id int32) int32 {
 	}
 
 	switch m.typ {
+	default:
+		fallthrough
 	case pthread.PTHREAD_MUTEX_NORMAL:
 		return errno.EBUSY
 	case pthread.PTHREAD_MUTEX_RECURSIVE:
@@ -452,8 +488,6 @@ func (m *mutex) tryLock(id int32) int32 {
 
 		m.Unlock()
 		return errno.EBUSY
-	default:
-		panic(todo("", m.typ))
 	}
 }
 
@@ -466,6 +500,8 @@ func (m *mutex) unlock() int32 {
 	// shall return zero; otherwise, an error number shall be returned to indicate
 	// the error.
 	switch m.typ {
+	default:
+		fallthrough
 	case pthread.PTHREAD_MUTEX_NORMAL:
 		// If the mutex type is PTHREAD_MUTEX_NORMAL, deadlock detection shall not be
 		// provided. Attempting to relock the mutex causes deadlock. If a thread
@@ -483,8 +519,6 @@ func (m *mutex) unlock() int32 {
 		}
 		m.Unlock()
 		return 0
-	default:
-		panic(todo("", m.typ))
 	}
 }
 

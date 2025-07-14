@@ -6,8 +6,16 @@ import (
 	"compress/gzip"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 )
+
+type Zxy struct {
+	Z uint8
+	X uint32
+	Y uint32
+}
 
 // Compression is the compression algorithm applied to individual tiles (or none)
 type Compression uint8
@@ -67,18 +75,14 @@ type HeaderV3 struct {
 // HeaderJson is a human-readable representation of parts of the binary header
 // that may need to be manually edited.
 // Omitted parts are the responsibility of the generator program and not editable.
+// The formatting is aligned with the TileJSON / MBTiles specification.
 type HeaderJson struct {
-	TileCompression string
-	TileType        string
-	MinZoom         int
-	MaxZoom         int
-	MinLon          float64
-	MinLat          float64
-	MaxLon          float64
-	MaxLat          float64
-	CenterZoom      int
-	CenterLon       float64
-	CenterLat       float64
+	TileCompression string    `json:"tile_compression"`
+	TileType        string    `json:"tile_type"`
+	MinZoom         int       `json:"minzoom"`
+	MaxZoom         int       `json:"maxzoom"`
+	Bounds          []float64 `json:"bounds"`
+	Center          []float64 `json:"center"`
 }
 
 func headerContentType(header HeaderV3) (string, bool) {
@@ -98,7 +102,7 @@ func headerContentType(header HeaderV3) (string, bool) {
 	}
 }
 
-func stringifiedTileType(t TileType) string {
+func tileTypeToString(t TileType) string {
 	switch t {
 	case Mvt:
 		return "mvt"
@@ -115,39 +119,70 @@ func stringifiedTileType(t TileType) string {
 	}
 }
 
+func stringToTileType(t string) TileType {
+	switch t {
+	case "mvt":
+		return Mvt
+	case "png":
+		return Png
+	case "jpg":
+		return Jpeg
+	case "webp":
+		return Webp
+	case "avif":
+		return Avif
+	default:
+		return UnknownTileType
+	}
+}
+
 func headerExt(header HeaderV3) string {
-	base := stringifiedTileType(header.TileType)
+	base := tileTypeToString(header.TileType)
 	if base == "" {
 		return ""
 	}
 	return "." + base
 }
 
-func headerContentEncoding(compression Compression) (string, bool) {
+func compressionToString(compression Compression) (string, bool) {
 	switch compression {
+	case NoCompression:
+		return "none", false
 	case Gzip:
 		return "gzip", true
 	case Brotli:
 		return "br", true
+	case Zstd:
+		return "zstd", true
 	default:
-		return "", false
+		return "unknown", false
+	}
+}
+
+func stringToCompression(s string) Compression {
+	switch s {
+	case "none":
+		return NoCompression
+	case "gzip":
+		return Gzip
+	case "br":
+		return Brotli
+	case "zstd":
+		return Zstd
+	default:
+		return UnknownCompression
 	}
 }
 
 func headerToJson(header HeaderV3) HeaderJson {
-	compressionString, _ := headerContentEncoding(header.TileCompression)
+	compressionString, _ := compressionToString(header.TileCompression)
 	return HeaderJson{
 		TileCompression: compressionString,
-		TileType:        stringifiedTileType(header.TileType),
+		TileType:        tileTypeToString(header.TileType),
 		MinZoom:         int(header.MinZoom),
 		MaxZoom:         int(header.MaxZoom),
-		MinLon:          float64(header.MinLonE7) / 10000000,
-		MinLat:          float64(header.MinLatE7) / 10000000,
-		MaxLon:          float64(header.MaxLonE7) / 10000000,
-		MaxLat:          float64(header.MaxLatE7) / 10000000,
-		CenterZoom:      int(header.CenterZoom),
-		CenterLon:       float64(header.CenterLonE7) / 10000000,
-		CenterLat:       float64(header.CenterLatE7) / 10000000,
+		Bounds:          []float64{float64(header.MinLonE7) / 10000000, float64(header.MinLatE7) / 10000000, float64(header.MaxLonE7) / 10000000, float64(header.MaxLatE7) / 10000000},
+		Center:          []float64{float64(header.CenterLonE7) / 10000000, float64(header.CenterLatE7) / 10000000, float64(header.CenterZoom)},
 	}
 }
 
@@ -164,10 +199,84 @@ type EntryV3 struct {
 	RunLength uint32
 }
 
-func serializeEntries(entries []EntryV3) []byte {
+type nopWriteCloser struct {
+	*bytes.Buffer
+}
+
+func (w *nopWriteCloser) Close() error { return nil }
+
+func SerializeMetadata(metadata map[string]interface{}, compression Compression) ([]byte, error) {
+	jsonBytes, err := json.Marshal(metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	if compression == NoCompression {
+		return jsonBytes, nil
+	} else if compression == Gzip {
+		var b bytes.Buffer
+		w, err := gzip.NewWriterLevel(&b, gzip.BestCompression)
+		if err != nil {
+			return nil, err
+		}
+		w.Write(jsonBytes)
+		w.Close()
+		return b.Bytes(), nil
+	} else {
+		return nil, errors.New("compression not supported")
+	}
+}
+
+func DeserializeMetadataBytes(reader io.Reader, compression Compression) ([]byte, error) {
+	var jsonBytes []byte
+	var err error
+
+	if compression == NoCompression {
+		jsonBytes, err = io.ReadAll(reader)
+		if err != nil {
+			return nil, err
+		}
+	} else if compression == Gzip {
+		gzipReader, err := gzip.NewReader(reader)
+		if err != nil {
+			return nil, err
+		}
+		jsonBytes, err = io.ReadAll(gzipReader)
+		if err != nil {
+			return nil, err
+		}
+		gzipReader.Close()
+	} else {
+		return nil, errors.New("compression not supported")
+	}
+
+	return jsonBytes, nil
+}
+
+func DeserializeMetadata(reader io.Reader, compression Compression) (map[string]interface{}, error) {
+	jsonBytes, err := DeserializeMetadataBytes(reader, compression)
+	var metadata map[string]interface{}
+	err = json.Unmarshal(jsonBytes, &metadata)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return metadata, nil
+}
+
+func SerializeEntries(entries []EntryV3, compression Compression) []byte {
 	var b bytes.Buffer
+	var w io.WriteCloser
+
 	tmp := make([]byte, binary.MaxVarintLen64)
-	w, _ := gzip.NewWriterLevel(&b, gzip.BestCompression)
+	if compression == NoCompression {
+		w = &nopWriteCloser{&b}
+	} else if compression == Gzip {
+		w, _ = gzip.NewWriterLevel(&b, gzip.BestCompression)
+	} else {
+		panic("Compression not supported")
+	}
 
 	var n int
 	n = binary.PutUvarint(tmp, uint64(len(entries)))
@@ -202,13 +311,22 @@ func serializeEntries(entries []EntryV3) []byte {
 	}
 
 	w.Close()
+
 	return b.Bytes()
 }
 
-func deserializeEntries(data *bytes.Buffer) []EntryV3 {
+func DeserializeEntries(data *bytes.Buffer, compression Compression) []EntryV3 {
 	entries := make([]EntryV3, 0)
 
-	reader, _ := gzip.NewReader(data)
+	var reader io.Reader
+
+	if compression == NoCompression {
+		reader = data
+	} else if compression == Gzip {
+		reader, _ = gzip.NewReader(data)
+	} else {
+		panic("Compression not supported")
+	}
 	byteReader := bufio.NewReader(reader)
 
 	numEntries, _ := binary.ReadUvarint(byteReader)
@@ -242,7 +360,7 @@ func deserializeEntries(data *bytes.Buffer) []EntryV3 {
 	return entries
 }
 
-func findTile(entries []EntryV3, tileID uint64) (EntryV3, bool) {
+func FindTile(entries []EntryV3, tileID uint64) (EntryV3, bool) {
 	m := 0
 	n := len(entries) - 1
 	for m <= n {
@@ -269,7 +387,7 @@ func findTile(entries []EntryV3, tileID uint64) (EntryV3, bool) {
 	return EntryV3{}, false
 }
 
-func serializeHeader(header HeaderV3) []byte {
+func SerializeHeader(header HeaderV3) []byte {
 	b := make([]byte, HeaderV3LenBytes)
 	copy(b[0:7], "PMTiles")
 
@@ -303,7 +421,7 @@ func serializeHeader(header HeaderV3) []byte {
 	return b
 }
 
-func deserializeHeader(d []byte) (HeaderV3, error) {
+func DeserializeHeader(d []byte) (HeaderV3, error) {
 	h := HeaderV3{}
 	magicNumber := d[0:7]
 	if string(magicNumber) != "PMTiles" {
@@ -344,7 +462,7 @@ func deserializeHeader(d []byte) (HeaderV3, error) {
 	return h, nil
 }
 
-func buildRootsLeaves(entries []EntryV3, leafSize int) ([]byte, []byte, int) {
+func buildRootsLeaves(entries []EntryV3, leafSize int, compression Compression) ([]byte, []byte, int) {
 	rootEntries := make([]EntryV3, 0)
 	leavesBytes := make([]byte, 0)
 	numLeaves := 0
@@ -355,19 +473,19 @@ func buildRootsLeaves(entries []EntryV3, leafSize int) ([]byte, []byte, int) {
 		if idx+leafSize > len(entries) {
 			end = len(entries)
 		}
-		serialized := serializeEntries(entries[idx:end])
+		serialized := SerializeEntries(entries[idx:end], compression)
 
 		rootEntries = append(rootEntries, EntryV3{entries[idx].TileID, uint64(len(leavesBytes)), uint32(len(serialized)), 0})
 		leavesBytes = append(leavesBytes, serialized...)
 	}
 
-	rootBytes := serializeEntries(rootEntries)
+	rootBytes := SerializeEntries(rootEntries, compression)
 	return rootBytes, leavesBytes, numLeaves
 }
 
-func optimizeDirectories(entries []EntryV3, targetRootLen int) ([]byte, []byte, int) {
+func optimizeDirectories(entries []EntryV3, targetRootLen int, compression Compression) ([]byte, []byte, int) {
 	if len(entries) < 16384 {
-		testRootBytes := serializeEntries(entries)
+		testRootBytes := SerializeEntries(entries, compression)
 		// Case1: the entire directory fits into the target len
 		if len(testRootBytes) <= targetRootLen {
 			return testRootBytes, make([]byte, 0), 0
@@ -387,10 +505,33 @@ func optimizeDirectories(entries []EntryV3, targetRootLen int) ([]byte, []byte, 
 	}
 
 	for {
-		rootBytes, leavesBytes, numLeaves := buildRootsLeaves(entries, int(leafSize))
+		rootBytes, leavesBytes, numLeaves := buildRootsLeaves(entries, int(leafSize), compression)
 		if len(rootBytes) <= targetRootLen {
 			return rootBytes, leavesBytes, numLeaves
 		}
 		leafSize *= 1.2
 	}
+}
+
+func IterateEntries(header HeaderV3, fetch func(uint64, uint64) ([]byte, error), operation func(EntryV3)) error {
+	var CollectEntries func(uint64, uint64) error
+
+	CollectEntries = func(dir_offset uint64, dir_length uint64) error {
+		data, err := fetch(dir_offset, dir_length)
+		if err != nil {
+			return err
+		}
+
+		directory := DeserializeEntries(bytes.NewBuffer(data), header.InternalCompression)
+		for _, entry := range directory {
+			if entry.RunLength > 0 {
+				operation(entry)
+			} else {
+				CollectEntries(header.LeafDirectoryOffset+entry.Offset, uint64(entry.Length))
+			}
+		}
+		return nil
+	}
+
+	return CollectEntries(header.RootOffset, header.RootLength)
 }

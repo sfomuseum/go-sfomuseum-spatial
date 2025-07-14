@@ -18,6 +18,7 @@ import (
 	"net/url"
 	"reflect"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -54,6 +55,11 @@ const (
 	ptrSize                 = unsafe.Sizeof(uintptr(0))
 	sqliteLockedSharedcache = sqlite3.SQLITE_LOCKED | (1 << 8)
 )
+
+// https://gitlab.com/cznic/sqlite/-/issues/199
+func init() {
+	sqlite3.PatchIssue199()
+}
 
 // Error represents sqlite library error code.
 type Error struct {
@@ -492,9 +498,32 @@ func toNamedValues(vals []driver.Value) (r []driver.NamedValue) {
 func (s *stmt) exec(ctx context.Context, args []driver.NamedValue) (r driver.Result, err error) {
 	var pstmt uintptr
 	var done int32
-	if ctx != nil && ctx.Done() != nil {
-		defer interruptOnDone(ctx, s.c, &done)()
+	if ctx != nil {
+		if ctxDone := ctx.Done(); ctxDone != nil {
+			select {
+			case <-ctxDone:
+				return nil, ctx.Err()
+			default:
+			}
+			defer interruptOnDone(ctx, s.c, &done)()
+		}
 	}
+
+	defer func() {
+		if ctx != nil && atomic.LoadInt32(&done) != 0 {
+			r, err = nil, ctx.Err()
+		}
+		if pstmt != 0 {
+			// ensure stmt finalized.
+			e := s.c.finalize(pstmt)
+
+			if err == nil && e != nil {
+				// prioritize original
+				// returned error.
+				err = e
+			}
+		}
+	}()
 
 	for psql := s.psql; *(*byte)(unsafe.Pointer(psql)) != 0 && atomic.LoadInt32(&done) == 0; {
 		if pstmt, err = s.c.prepareV2(&psql); err != nil {
@@ -532,7 +561,7 @@ func (s *stmt) exec(ctx context.Context, args []driver.NamedValue) (r driver.Res
 
 			switch rc & 0xff {
 			case sqlite3.SQLITE_DONE, sqlite3.SQLITE_ROW:
-				// nop
+				r, err = newResult(s.c)
 			default:
 				return s.c.errstr(int32(rc))
 			}
@@ -540,7 +569,12 @@ func (s *stmt) exec(ctx context.Context, args []driver.NamedValue) (r driver.Res
 			return nil
 		}()
 
-		if e := s.c.finalize(pstmt); e != nil && err == nil {
+		e := s.c.finalize(pstmt)
+		pstmt = 0 // done with
+
+		if err == nil && e != nil {
+			// prioritize original
+			// returned error.
 			err = e
 		}
 
@@ -548,7 +582,7 @@ func (s *stmt) exec(ctx context.Context, args []driver.NamedValue) (r driver.Res
 			return nil, err
 		}
 	}
-	return newResult(s.c)
+	return r, err
 }
 
 // NumInput returns the number of placeholder parameters.
@@ -576,16 +610,37 @@ func (s *stmt) Query(args []driver.Value) (driver.Rows, error) { //TODO StmtQuer
 func (s *stmt) query(ctx context.Context, args []driver.NamedValue) (r driver.Rows, err error) {
 	var pstmt uintptr
 	var done int32
-	if ctx != nil && ctx.Done() != nil {
-		defer interruptOnDone(ctx, s.c, &done)()
+	if ctx != nil {
+		if ctxDone := ctx.Done(); ctxDone != nil {
+			select {
+			case <-ctxDone:
+				return nil, ctx.Err()
+			default:
+			}
+			defer interruptOnDone(ctx, s.c, &done)()
+		}
 	}
 
 	var allocs []uintptr
 
 	defer func() {
-		if r == nil && err == nil {
+		if ctx != nil && atomic.LoadInt32(&done) != 0 {
+			r, err = nil, ctx.Err()
+		} else if r == nil && err == nil {
 			r, err = newRows(s.c, pstmt, allocs, true)
 		}
+
+		if pstmt != 0 {
+			// ensure stmt finalized.
+			e := s.c.finalize(pstmt)
+
+			if err == nil && e != nil {
+				// prioritize original
+				// returned error.
+				err = e
+			}
+		}
+
 	}()
 
 	for psql := s.psql; *(*byte)(unsafe.Pointer(psql)) != 0 && atomic.LoadInt32(&done) == 0; {
@@ -651,7 +706,13 @@ func (s *stmt) query(ctx context.Context, args []driver.NamedValue) (r driver.Ro
 			}
 			return nil
 		}()
-		if e := s.c.finalize(pstmt); e != nil && err == nil {
+
+		e := s.c.finalize(pstmt)
+		pstmt = 0 // done with
+
+		if err == nil && e != nil {
+			// prioritize original
+			// returned error.
 			err = e
 		}
 
@@ -666,7 +727,7 @@ type tx struct {
 	c *conn
 }
 
-func newTx(c *conn, opts driver.TxOptions) (*tx, error) {
+func newTx(ctx context.Context, c *conn, opts driver.TxOptions) (*tx, error) {
 	r := &tx{c: c}
 
 	sql := "begin"
@@ -674,7 +735,7 @@ func newTx(c *conn, opts driver.TxOptions) (*tx, error) {
 		sql = "begin " + c.beginMode
 	}
 
-	if err := r.exec(context.Background(), sql); err != nil {
+	if err := r.exec(ctx, sql); err != nil {
 		return nil, err
 	}
 
@@ -829,7 +890,25 @@ func applyQueryParams(c *conn, query string) error {
 		return err
 	}
 
+	var a []string
 	for _, v := range q["_pragma"] {
+		a = append(a, v)
+	}
+	// Push 'busy_timeout' first, the rest in lexicographic order, case insenstive.
+	// See https://gitlab.com/cznic/sqlite/-/issues/198#note_2233423463 for
+	// discussion.
+	sort.Slice(a, func(i, j int) bool {
+		x, y := strings.TrimSpace(strings.ToLower(a[i])), strings.TrimSpace(strings.ToLower(a[j]))
+		if strings.HasPrefix(x, "busy_timeout") {
+			return true
+		}
+		if strings.HasPrefix(y, "busy_timeout") {
+			return false
+		}
+
+		return x < y
+	})
+	for _, v := range a {
 		cmd := "pragma " + v
 		_, err := c.exec(context.Background(), cmd, nil)
 		if err != nil {
@@ -1150,32 +1229,6 @@ func (c *conn) bindText(pstmt uintptr, idx1 int, value string) (uintptr, error) 
 
 // C documentation
 //
-//	int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
-func (c *conn) bindBlob(pstmt uintptr, idx1 int, value []byte) (uintptr, error) {
-	if value != nil && len(value) == 0 {
-		if rc := sqlite3.Xsqlite3_bind_zeroblob(c.tls, pstmt, int32(idx1), 0); rc != sqlite3.SQLITE_OK {
-			return 0, c.errstr(rc)
-		}
-		return 0, nil
-	}
-
-	p, err := c.malloc(len(value))
-	if err != nil {
-		return 0, err
-	}
-	if len(value) != 0 {
-		copy((*libc.RawMem)(unsafe.Pointer(p))[:len(value):len(value)], value)
-	}
-	if rc := sqlite3.Xsqlite3_bind_blob(c.tls, pstmt, int32(idx1), p, int32(len(value)), 0); rc != sqlite3.SQLITE_OK {
-		c.free(p)
-		return 0, c.errstr(rc)
-	}
-
-	return p, nil
-}
-
-// C documentation
-//
 //	int sqlite3_bind_int(sqlite3_stmt*, int, int);
 func (c *conn) bindInt(pstmt uintptr, idx1, value int) (err error) {
 	if rc := sqlite3.Xsqlite3_bind_int(c.tls, pstmt, int32(idx1), int32(value)); rc != sqlite3.SQLITE_OK {
@@ -1390,7 +1443,7 @@ func (c *conn) Begin() (dt driver.Tx, err error) {
 }
 
 func (c *conn) begin(ctx context.Context, opts driver.TxOptions) (t driver.Tx, err error) {
-	return newTx(c, opts)
+	return newTx(ctx, c, opts)
 }
 
 // Close invalidates and potentially stops any current prepared statements and
@@ -1433,6 +1486,27 @@ func (c *conn) closeV2(db uintptr) error {
 	}
 
 	return nil
+}
+
+// ResetSession is called prior to executing a query on the connection if the
+// connection has been used before. If the driver returns ErrBadConn the
+// connection is discarded.
+func (c *conn) ResetSession(ctx context.Context) error {
+	if !c.usable() {
+		return driver.ErrBadConn
+	}
+
+	return nil
+}
+
+// IsValid is called prior to placing the connection into the connection pool.
+// The connection will be discarded if false is returned.
+func (c *conn) IsValid() bool {
+	return c.usable()
+}
+
+func (c *conn) usable() bool {
+	return c.db != 0 && sqlite3.Xsqlite3_is_interrupted(c.tls, c.db) == 0
 }
 
 // FunctionImpl describes an [application-defined SQL function]. If Scalar is
@@ -1849,6 +1923,21 @@ type ExecQuerierContext interface {
 	driver.QueryerContext
 }
 
+// Commit releases all resources associated with the Backup object but does not
+// close the destination database connection.
+//
+// The destination database connection is returned to the caller or an error if raised.
+// It is the responsibility of the caller to handle the connection closure.
+func (b *Backup) Commit() (driver.Conn, error) {
+	rc := sqlite3.Xsqlite3_backup_finish(b.srcConn.tls, b.pBackup)
+
+	if rc == sqlite3.SQLITE_OK {
+		return b.dstConn, nil
+	} else {
+		return nil, b.srcConn.errstr(rc)
+	}
+}
+
 // ConnectionHookFn function type for a connection hook on the Driver. Connection
 // hooks are called after the connection has been set up.
 type ConnectionHookFn func(
@@ -2139,7 +2228,9 @@ func functionArgs(tls *libc.TLS, argc int32, argv uintptr) []driver.Value {
 			size := sqlite3.Xsqlite3_value_bytes(tls, valPtr)
 			blobPtr := sqlite3.Xsqlite3_value_blob(tls, valPtr)
 			v := make([]byte, size)
-			copy(v, (*libc.RawMem)(unsafe.Pointer(blobPtr))[:size:size])
+			if size != 0 {
+				copy(v, (*libc.RawMem)(unsafe.Pointer(blobPtr))[:size:size])
+			}
 			args[i] = v
 		default:
 			panic(fmt.Sprintf("unexpected argument type %q passed by sqlite", valType))
@@ -2452,4 +2543,30 @@ func Limit(c *sql.Conn, id int, newVal int) (r int, err error) {
 	})
 	return r, err
 
+}
+
+// C documentation
+//
+//	int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+func (c *conn) bindBlob(pstmt uintptr, idx1 int, value []byte) (uintptr, error) {
+	if value == nil {
+		if rc := sqlite3.Xsqlite3_bind_null(c.tls, pstmt, int32(idx1)); rc != sqlite3.SQLITE_OK {
+			return 0, c.errstr(rc)
+		}
+		return 0, nil
+	}
+
+	p, err := c.malloc(len(value))
+	if err != nil {
+		return 0, err
+	}
+	if len(value) != 0 {
+		copy((*libc.RawMem)(unsafe.Pointer(p))[:len(value):len(value)], value)
+	}
+	if rc := sqlite3.Xsqlite3_bind_blob(c.tls, pstmt, int32(idx1), p, int32(len(value)), 0); rc != sqlite3.SQLITE_OK {
+		c.free(p)
+		return 0, c.errstr(rc)
+	}
+
+	return p, nil
 }

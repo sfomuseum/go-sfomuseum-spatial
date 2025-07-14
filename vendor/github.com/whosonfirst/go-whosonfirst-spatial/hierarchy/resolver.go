@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/paulmach/orb"
 	"github.com/paulmach/orb/geojson"
 	"github.com/sfomuseum/go-sfomuseum-mapshaper"
 	"github.com/tidwall/gjson"
-	"github.com/whosonfirst/go-reader"
-	"github.com/whosonfirst/go-whosonfirst-export/v2"
+	"github.com/whosonfirst/go-reader/v2"
+	"github.com/whosonfirst/go-whosonfirst-export/v3"
 	"github.com/whosonfirst/go-whosonfirst-placetypes"
 	"github.com/whosonfirst/go-whosonfirst-spatial/database"
 	"github.com/whosonfirst/go-whosonfirst-spatial/filter"
@@ -153,6 +154,12 @@ func (t *PointInPolygonHierarchyResolver) PointInPolygon(ctx context.Context, in
 	logger = logger.With("id", id)
 	logger = logger.With("name", name)
 
+	t1 := time.Now()
+
+	defer func() {
+		logger.Debug("Time to PIP", "final", time.Since(t1))
+	}()
+
 	centroid, err := t.PointInPolygonCentroid(ctx, body)
 
 	if err != nil {
@@ -245,7 +252,11 @@ func (t *PointInPolygonHierarchyResolver) PointInPolygon(ctx context.Context, in
 
 		logger.Debug("Perform point in polygon with placetype filter", "placetype", pt_name)
 
+		t2 := time.Now()
+
 		rsp, err := t.Database.PointInPolygon(ctx, coord, spr_filter)
+
+		logger = logger.With(pt_name, time.Since(t2))
 
 		if err != nil {
 			return nil, fmt.Errorf("Failed to point in polygon for %v, %v", coord, err)

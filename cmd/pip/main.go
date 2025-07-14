@@ -5,8 +5,8 @@ import (
 	"log"
 
 	_ "github.com/whosonfirst/go-whosonfirst-spatial-pmtiles"
-	_ "github.com/whosonfirst/go-whosonfirst-spatial-sqlite"	
-	
+	_ "github.com/whosonfirst/go-whosonfirst-spatial-sqlite"
+
 	"github.com/whosonfirst/go-whosonfirst-spatial/app/pip"
 )
 

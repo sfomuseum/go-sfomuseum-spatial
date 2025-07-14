@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build !(linux && (amd64 || arm64 || loong64 || ppc64le || s390x || riscv64 || 386 || arm))
+
 package libc // import "modernc.org/libc"
 
 import (
@@ -17,7 +19,6 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 	"unsafe"
 
@@ -170,6 +171,10 @@ func removeObject(t uintptr) {
 }
 
 func (t *TLS) setErrno(err interface{}) {
+	if t == nil {
+		panic("nil TLS")
+	}
+
 	if memgrind {
 		if atomic.SwapInt32(&t.reentryGuard, 1) != 0 {
 			panic(todo("concurrent use of TLS instance %p", t))
@@ -193,7 +198,7 @@ again:
 	case *os.PathError:
 		err = x.Err
 		goto again
-	case syscall.Errno:
+	case syscallErrno:
 		*(*int32)(unsafe.Pointer(t.errnop)) = int32(x)
 	case *os.SyscallError:
 		err = x.Err
@@ -232,6 +237,7 @@ func (t *TLS) Close() {
 //		t.Free(11)
 //	t.Free(22)
 func (t *TLS) Alloc(n int) (r uintptr) {
+	t.sp++
 	if memgrind {
 		if atomic.SwapInt32(&t.reentryGuard, 1) != 0 {
 			panic(todo("concurrent use of TLS instance %p", t))
@@ -316,6 +322,7 @@ const stackFrameKeepalive = 2
 // Free deallocates n bytes of thread-local storage. See TLS.Alloc for details
 // on correct usage.
 func (t *TLS) Free(n int) {
+	t.sp--
 	if memgrind {
 		if atomic.SwapInt32(&t.reentryGuard, 1) != 0 {
 			panic(todo("concurrent use of TLS instance %p", t))
@@ -566,38 +573,25 @@ func VaUintptr(app *uintptr) uintptr {
 	return v
 }
 
+func getVaList(va uintptr) []string {
+	r := []string{}
+
+	for p := va; ; p += 8 {
+		st := *(*uintptr)(unsafe.Pointer(p))
+		if st == 0 {
+			return r
+		}
+		r = append(r, GoString(st))
+	}
+	return r
+}
+
 func roundup(n, to uintptr) uintptr {
 	if r := n % to; r != 0 {
 		return n + to - r
 	}
 
 	return n
-}
-
-func GoString(s uintptr) string {
-	if s == 0 {
-		return ""
-	}
-
-	var buf []byte
-	for {
-		b := *(*byte)(unsafe.Pointer(s))
-		if b == 0 {
-			return string(buf)
-		}
-
-		buf = append(buf, b)
-		s++
-	}
-}
-
-// GoBytes returns a byte slice from a C char* having length len bytes.
-func GoBytes(s uintptr, len int) []byte {
-	if len == 0 {
-		return nil
-	}
-
-	return (*RawMem)(unsafe.Pointer(s))[:len:len]
 }
 
 func Bool(v bool) bool { return v }
