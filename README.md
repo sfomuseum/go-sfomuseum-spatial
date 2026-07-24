@@ -2,6 +2,10 @@
 
 Go package implementing SFO Museum specific methods for use with the [whosonfirst/go-whosonfirst-spatial](https://github.com/whosonfirst/go-whosonfirst-spatial) packages.
 
+## Deprecation Notice
+
+This package has been deprecated. Please use [sfomuseum/go-sfomuseum/spatial](https://github.com/sfomuseum/go-sfomuseum) instead.
+
 ## Documentation
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/sfomuseum/go-sfomuseum-spatial.svg)](https://pkg.go.dev/github.com/sfomuseum/go-sfomuseum-spatial)
